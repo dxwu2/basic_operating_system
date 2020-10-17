@@ -25,10 +25,6 @@ void i8259_init(void) {
 
     // send ICWs to both master AND slave
 
-    // mask all of master and slave, use command port
-    outb(master_mask, MASTER_8259_PORT);
-    outb(slave_mask, SLAVE_8259_PORT);
-
     // sending ICW1-4 to master PIC, use data port (port + 1) for ICW2-4 per lecture
 
     // ICW1: start init, edge-triggered inputs, cascase mode, 4 ICWs
@@ -46,6 +42,11 @@ void i8259_init(void) {
     // ICW4: ISA=x86, normal/auto EOI
     outb(ICW4, MASTER_8259_PORT+1);
     outb(ICW4, SLAVE_8259_PORT+1);
+
+
+    // mask all of master and slave, use data port
+    outb(master_mask, MASTER_8259_PORT+1);
+    outb(slave_mask, SLAVE_8259_PORT+1);
 
     // need to enable slave PIC - IRQ2 on master (otherwise slave is always masked)
     enable_irq(2);
