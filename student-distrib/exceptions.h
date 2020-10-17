@@ -37,12 +37,3 @@ void simd_float_err_excep();
 void system_call();
 #endif
 
-//BUGS: DEFINING STUFF in header rather than just declaring
-
-//add extern before declarations???
-
-// had to remove exception.S assembly file (stuff compiling twice)
-
-//INVALID MAGIC NUMBER: wasn't saving caller-saved registers before initializing idt
-
-//Print statement exception handler did not appear - had to add clear() in exception handler
