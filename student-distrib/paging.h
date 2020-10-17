@@ -50,13 +50,11 @@ typedef struct __attribute__((packed)) pte {
 } pte_t;
 
 /* global variables */
-extern pte_t page_table[NUM_ENTRIES] __attribute__ ((aligned (PAGING_ALIGNMENT)));
-extern pde_t page_directory[NUM_ENTRIES] __attribute__((aligned (PAGING_ALIGNMENT)));
+pte_t page_table[NUM_ENTRIES] __attribute__ ((aligned (PAGING_ALIGNMENT)));
+pde_t page_directory[NUM_ENTRIES] __attribute__((aligned (PAGING_ALIGNMENT)));
 
 /* functions in paging.c */
 void init_paging();
-void create_pt();
-void flush_tlb();
 /* functions in paging.S */
 void enable_paging();
 void enable_PSE();

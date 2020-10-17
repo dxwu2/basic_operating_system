@@ -2,8 +2,6 @@
 
 #include "paging.h"
 
-/* local functions */
-
 
 void init_paging() {
 
