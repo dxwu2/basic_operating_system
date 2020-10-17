@@ -24,9 +24,21 @@ _start:
     jmp     continue
 
 continue:
-    # Load the GDT - my code
+    # Load the GDT
     lgdt    gdt_desc
 
+    # Initialize the idt - follow c calling convention (caller-save registers)
+    pushl %eax
+    pushl %ecx
+    pushl %edx
+    call    idt_setup
+    popl %edx
+    popl %ecx
+    popl %eax
+
+    # Load the IDT
+    lidt    idt_desc_ptr
+    
     # Load CS with the new descriptor value
     ljmp    $KERNEL_CS, $keep_going
 
@@ -41,7 +53,7 @@ keep_going:
     movw    %cx, %es
     movw    %cx, %fs
     movw    %cx, %gs
-
+    
     # Push the parameters that entry() expects (see kernel.c):
     # eax = multiboot magic
     # ebx = address of multiboot info struct

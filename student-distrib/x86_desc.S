@@ -27,7 +27,7 @@ ldt_desc:
     .long ldt
 
     .align 4
-# Checkpoint 1 code start - specify fields for gdtr
+# Checkpoint 1 - set gdt_desc
 gdt_desc:
     .word gdt_bottom - gdt - 1    # size of gdt (16-bit table limit)
     .long gdt              # linear addr of byte 0 (32-bit addr)
