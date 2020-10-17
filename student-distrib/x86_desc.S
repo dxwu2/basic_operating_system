@@ -27,6 +27,13 @@ ldt_desc:
     .long ldt
 
     .align 4
+# Checkpoint 1 - set gdt_desc
+gdt_desc:
+    .word gdt_bottom - gdt - 1    # size of gdt (16-bit table limit)
+    .long gdt              # linear addr of byte 0 (32-bit addr)
+
+    .align 16             # to match gdt_bottom spec below
+# end
 tss:
 _tss:
     .rept 104
@@ -91,7 +98,7 @@ ldt:
     .endr
 ldt_bottom:
 
-.align 4
+    .align 4
     .word 0 # Padding
 idt_desc_ptr:
     .word idt_bottom - idt - 1
