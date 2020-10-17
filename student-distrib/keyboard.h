@@ -13,6 +13,6 @@
 void keyboard_init(void);
 
 // handler for keyboard
-void keyboard_handler(void);
+extern void keyboard_handler(void);
 
 #endif /* _KEYBOARD_H */

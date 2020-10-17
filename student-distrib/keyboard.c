@@ -64,7 +64,7 @@ void keyboard_handler(void){
         idx1 = (scancode & 0xF0) >> 4;      // grab high 4 bits to determine group
         idx2 = (scancode & 0x0F);           // grab low 4 bits to determine specific char
         letter = normal_map[idx1][idx2];
-        printf(letter);
+        printf("%d", letter);
     }
 
     // SET_IDT_ENTRY(idt[0x20], keyboard_handler);

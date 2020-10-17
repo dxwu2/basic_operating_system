@@ -1,5 +1,7 @@
 #include "idt_setup.h"
 
+#include "keyboard.h"
+
 /* void idt_setup()
  * Sets up interrupt descriptor table for inital boot
  * Inputs: None
@@ -43,7 +45,9 @@ void idt_setup() {
     SET_IDT_ENTRY(idt[0x13], simd_float_err_excep);
 
     //We still need entries for system calls and devices
-    // SET_IDT_ENTRY(idt[0x20], DEVICE1);
+    
+    // keyboard entry
+    SET_IDT_ENTRY(idt[0x21], keyboard_handler);
 
     SET_IDT_ENTRY(idt[0x80], system_call);
 }
