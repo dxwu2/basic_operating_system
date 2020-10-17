@@ -18,15 +18,10 @@ uint8_t slave_mask = 0xFF;  /* IRQs 8-15 */
  *   INPUTS: none
  *   OUTPUTS: none
  *   RETURN VALUE: none
- *   SIDE EFFECTS: master IR's mapped to 0-7, slave IR's mapped to 8-15
+ *   SIDE EFFECTS: sends ICW1-4 to master and slave PICs
  */   
 void i8259_init(void) {
-    // critical section? - TA said something
-    // lecture says critical section spans the whole function
-    //      - to avoid other 8259A interactions during initialization seq
-    //      - (device protocol requires that four words be sent in order)
-
-    cli();
+    // cli(); - initializing func must be a crit sect BUT this is covered by cli in boot.S and sti in kernel.c
 
     // send ICWs to both master AND slave
 
@@ -34,7 +29,7 @@ void i8259_init(void) {
     outb(master_mask, MASTER_8259_PORT);
     outb(slave_mask, SLAVE_8259_PORT);
 
-    // sending ICW1-4 to master PIC, use data port for ICW2-4 per lecture
+    // sending ICW1-4 to master PIC, use data port (port + 1) for ICW2-4 per lecture
 
     // ICW1: start init, edge-triggered inputs, cascase mode, 4 ICWs
     outb(ICW1, MASTER_8259_PORT);
@@ -51,8 +46,11 @@ void i8259_init(void) {
     // ICW4: ISA=x86, normal/auto EOI
     outb(ICW4, MASTER_8259_PORT+1);
     outb(ICW4, SLAVE_8259_PORT+1);
+
+    // need to enable slave PIC - IRQ2 on master (otherwise slave is always masked)
+    enable_irq(2);
     
-    sti();
+    // sti();
 }
 
 /*
@@ -142,10 +140,10 @@ void send_eoi(uint32_t irq_num) {
     }
     // if slave
     else{
-        irq_num -= 8;
+        irq_num -= 8;               // to get w/in proper bounds for shifting
         outb(EOI | irq_num, SLAVE_8259_PORT+1);
 
-        // also need to mask IR2 on master per lecture, so OR w/ 2
+        // also need to mask IR2 on master per lecture, so OR w/ 2 (0x2)
         outb(EOI | 0x2, MASTER_8259_PORT+1);
     }
 }
