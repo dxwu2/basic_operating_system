@@ -5,13 +5,19 @@
 #include "x86_desc.h"   // most likely???
 
 /* macros */
-#define NUM_ENTRIES 1024        // since we have 2^10 = 1024 entries for both the PD and PT
-#define PAGING_ALIGNMENT 4096   // align to the nearest 4 kB (minimal page size)
+#define NUM_ENTRIES         1024        // since we have 2^10 = 1024 entries for both the PD and PT
+#define PAGING_ALIGNMENT    4096        // align to the nearest 4 kB (minimal page size)
+#define VIDMEM_ADDRESS      0x000B8000
+#define KERNEL_ADDRESS      0x00400000
 
-/* struct for Page Director Entries */
+#define ADDRESS_SHIFT_KB    12          // only need top 20 bits (so shift right 12) to find where 4kB pages are
+#define ADDRESS_SHIFT_MB    22          // only need top 10 bits (so shift right 22) to find where 4MB pages are
+
+/* struct for Page Directory Entries */
 typedef struct pde {
-    /* using union and struct here gives us the option to choose between 4MB and 4kB pages */
+    /* using union and struct here gives us the option to use both between 4MB and 4kB pages */
     union {
+        //uint32_t entry_value;
         struct {
             uint32_t P              : 1;    // Present bit
             uint32_t R              : 1;    // Read/Write Permissions flag
@@ -54,3 +60,4 @@ void flush_tlb();
 /* functions in paging.S */
 void enable_paging();
 void enable_PSE();
+void flush_tlb();

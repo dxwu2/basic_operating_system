@@ -3,6 +3,11 @@
 #define ASM     1
 #include "paging.h"
 
+/* void enable_paging() - paging is optional, so we need enable it by setting bit-31 in CR0
+ * Inputs   : none
+ * Outputs  : none
+ * side effects : this function also locates the page directory by placing its start address in CR3
+ */
 enable_paging:
     movl page_directory, %eax
     movl %eax, %cr3
@@ -20,4 +25,14 @@ enable_PSE:
     movl %cr4, %eax
     orl eax, 0x00000010, %eax
     movl %eax, %cr4
+    ret
+
+/* void flush_tlb()
+ * Inputs : none
+ * Outputs: none
+ * side effects : TLB needs to be flushed whenever cr3 is reloaded (program switches)
+ */
+flush_tlb:
+    movl %cr3, %eax
+    movl %eax, %cr3
     ret
