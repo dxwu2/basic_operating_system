@@ -67,4 +67,8 @@ void keyboard_handler(void){
         printf(letter);
     }
 
+    // SET_IDT_ENTRY(idt[0x20], keyboard_handler);
+
+    // at the end send an EOI
+    send_eoi(KEYBOARD_IRQ_LINE);
 }
