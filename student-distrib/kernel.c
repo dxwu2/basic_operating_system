@@ -140,21 +140,28 @@ void entry(unsigned long magic, unsigned long addr) {
     /* Init the PIC */
     i8259_init();
 
-    keyboard_init();
+    // sti();
 
     /* Initialize devices, memory, filesystem, enable device interrupts on the
      * PIC, any other initialization stuff... */
+
+    keyboard_init();
+    // outb(0xF2, 0x60);      // set scan code set 2 to keyboard data port
 
     /* Enable interrupts */
     /* Do not enable the following until after you have set up your
      * IDT correctly otherwise QEMU will triple fault and simple close
      * without showing you any output */
-    /*printf("Enabling Interrupts\n");
-    sti();*/
+    clear();
+    // printf("Enabling Interrupts\n");
+
+
+    sti();
 
 #ifdef RUN_TESTS
     /* Run tests */
     launch_tests();
+    // clear();
 #endif
     /* Execute the first program ("shell") ... */
 
