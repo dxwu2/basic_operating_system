@@ -1,7 +1,12 @@
 # paging.S - includes functions that are to be written in assembly with regards to paging
 
 #define ASM     1
-#include "paging.h"
+
+.text
+
+.globl enable_paging
+.globl enable_PSE
+.globl flush_tlb
 
 /* void enable_paging() - paging is optional, so we need enable it by setting bit-31 in CR0
  * Inputs   : none

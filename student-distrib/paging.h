@@ -56,6 +56,6 @@ pde_t page_directory[NUM_ENTRIES] __attribute__((aligned (PAGING_ALIGNMENT)));
 /* functions in paging.c */
 void init_paging();
 /* functions in paging.S */
-void enable_paging();
-void enable_PSE();
-void flush_tlb();
+extern void enable_paging();
+extern void enable_PSE();
+extern void flush_tlb();
