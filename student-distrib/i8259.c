@@ -31,11 +31,11 @@ void i8259_init(void) {
     outb(ICW1, MASTER_8259_PORT);
     outb(ICW1, SLAVE_8259_PORT);
 
-    // ICW2_MASTER: high bits of vector# (master and slave respectively)
+    // ICW2: high bits of vector# (master and slave respectively)
     outb(ICW2_MASTER, MASTER_8259_PORT+1);
     outb(ICW2_SLAVE, SLAVE_8259_PORT+1);
 
-    // ICW3_MASTER: bit vector of slaves
+    // ICW3: bit vector of slaves
     outb(ICW3_MASTER, MASTER_8259_PORT+1);      // bit vector of slaves
     outb(ICW3_SLAVE, SLAVE_8259_PORT+1);        // input pin on master
 
@@ -75,16 +75,14 @@ void enable_irq(uint32_t irq_num) {
     // if master (mapped from 0 to 7)
     if(irq_num < 8 && irq_num >= 0){
         port = MASTER_8259_PORT+1;
-        value = master_mask;
     }
     // if slave, >8 (mapped from 8 to 15)
     else{
         irq_num -= 8;                   // to get w/in proper bounds for shifting
         port = SLAVE_8259_PORT+1;
-        value = slave_mask;
     }
     
-    value = value & ~(1 << irq_num);
+    value = inb(port) & ~(1 << irq_num);
     outb(value, port);
 }
 
@@ -109,16 +107,14 @@ void disable_irq(uint32_t irq_num) {
     // if master (mapped from 0 to 7)
     if(irq_num < 8 && irq_num >= 0){
         port = MASTER_8259_PORT+1;
-        value = master_mask;
     }
     // if slave, >8 (mapped from 8 to 15)
     else{
         irq_num -= 8;                   // to get w/in proper bounds for shifting
         port = SLAVE_8259_PORT+1;
-        value = slave_mask;
     }
 
-    value = value | (1 << irq_num);     // lshift 1 accordingly to determine 
+    value = inb(port) | (1 << irq_num);     // lshift 1 accordingly to determine 
     outb(value, port);
 }
 
