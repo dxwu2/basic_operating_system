@@ -45,7 +45,38 @@ int idt_test(){
 	return result;
 }
 
-// add more tests here
+/* Divide-by-zero Test
+*
+* Asserts that division by zero prints correct exception message
+* Inputs: None
+* Outputs: None
+* Side Effects: Prints exception message
+* Coverage: idt_setup(), handle_exception()
+* Files: exceptions.c/h, idt_setup.c/h
+*/
+void divide_by_zero_test(){
+	TEST_HEADER;
+
+	int result;
+	int op = 1;
+	int div = 0;
+	result = op/div;
+}
+
+/* System call Test
+*
+* Asserts system call goes through
+* Inputs: None
+* Outputs: None
+* Side Effects: Prints "exception message"
+* Coverage: idt_setup(), handle_system_call()
+* Files: exceptions.c/h, idt_setup.c/h
+*/
+void system_call_test(){
+	TEST_HEADER;
+
+	asm volatile ("int $0x80");
+}
 
 /* Checkpoint 2 tests */
 /* Checkpoint 3 tests */
@@ -55,6 +86,8 @@ int idt_test(){
 
 /* Test suite entry point */
 void launch_tests(){
-	TEST_OUTPUT("idt_test", idt_test());
 	// launch your tests here
+	TEST_OUTPUT("idt_test", idt_test());
+	// divide_by_zero_test();
+	system_call_test();
 }
