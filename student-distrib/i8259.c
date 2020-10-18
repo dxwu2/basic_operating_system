@@ -137,14 +137,14 @@ void send_eoi(uint32_t irq_num) {
 
     // if master
     if(irq_num < 8 && irq_num >= 0){
-        outb(EOI | irq_num, MASTER_8259_PORT+1);        // This gets OR'd with the interrupt number and sent out to the PIC
+        outb(EOI | irq_num, MASTER_8259_PORT);        // This gets OR'd with the interrupt number and sent out to the PIC
     }
     // if slave
     else{
         irq_num -= 8;               // to get w/in proper bounds for shifting
-        outb(EOI | irq_num, SLAVE_8259_PORT+1);
+        outb(EOI | irq_num, SLAVE_8259_PORT);
 
         // also need to mask IR2 on master per lecture, so OR w/ 2 (0x2)
-        outb(EOI | 0x2, MASTER_8259_PORT+1);
+        outb(EOI | 0x2, MASTER_8259_PORT);
     }
 }
