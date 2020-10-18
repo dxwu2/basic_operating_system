@@ -54,8 +54,7 @@ pte_t page_table[NUM_ENTRIES] __attribute__ ((aligned (PAGING_ALIGNMENT)));
 pde_t page_directory[NUM_ENTRIES] __attribute__((aligned (PAGING_ALIGNMENT)));
 
 /* functions in paging.c */
-void init_paging();
-/* functions in paging.S */
-extern void enable_paging();
-extern void enable_PSE();
-extern void flush_tlb();
+void init_paging(void);
+//extern void enable_paging(void);
+//extern void enable_PSE(void);
+extern void flush_tlb(void);

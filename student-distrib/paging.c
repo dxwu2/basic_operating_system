@@ -3,15 +3,15 @@
 #include "paging.h"
 
 
-void init_paging() {
+void init_paging(void) {
 
     /* bit 31 in CR0 needs to be set -> PG(page enable), paging is optional so must be enabled for use */
     /* also reloads CR3 */
-    enable_paging();
+    //enable_paging();
     /* TLB needs to be flushed when CR3 reloaded */
-    flush_tlb();
+    //flush_tlb();
     /* bit 4 in CR4 needs to be set -> PSE (page size extension) */
-    enable_PSE();
+    //enable_PSE();
 
     /* PAGE DIRECTORY INITIALIZATION */
     /* initialize same stuff first (change for vid memory and kernel later) */
@@ -55,5 +55,77 @@ void init_paging() {
     page_directory[1].offset31_12 = KERNEL_ADDRESS >> ADDRESS_SHIFT_KB;
     page_directory[1].P = 1;        // mark as present
 
+    asm volatile(
+        "movl page_directory, %%eax\n"
+        "movl %%eax, %%cr3\n"
+        "movl %%cr0, %%eax\n"
+        "orl 0x80000001, %%eax\n"
+        "movl %%eax, %%cr0\n"
+        "movl %%cr4, %%eax\n"
+        "orl 0x00000010, %%eax\n"
+        "movl %%eax, %%cr4"
+        :
+        :
+        : "memory", "cc", "eax"
+    );
+
 }
 
+
+/* void enable_paging() - paging is optional, so we need enable it by setting bit-31 in CR0
+ * Inputs   : none
+ * Outputs  : none
+ * Clobbers : memory, cc, EAX
+ * side effects : this function also locates the page directory by placing its start address in CR3
+ */
+/*
+void enable_paging(void) {
+    asm volatile(
+        "movl page_directory, %%eax\n"
+        "movl %%eax, %%cr3\n"
+        "movl %%cr0, %%eax\n"
+        "orl 0x80000001, %%eax\n"
+        "movl %%eax, %%cr0"
+        :
+        :
+        : "memory", "cc", "eax"
+    );
+}
+*/
+
+/* void flush_tlb()
+ * Inputs : none
+ * Outputs: none
+ * Clobbers : memory (since we performed memory reads or writes to items other than those listed in the input and output operands)
+ *          : cc (modified flag registers)
+ */
+
+void flush_tlb(void) {
+    asm volatile(
+        "movl %%cr3, %%eax\n"
+        "movl %%eax, %%cr3\n"
+        :
+        : 
+        : "memory", "cc"
+    );
+    return;
+}
+
+/* void enable_PSE()
+ * Inputs  : none
+ * Outputs : none
+ * Clobbers: EAX,cc, mem
+ * side effects : enables PSE (4 MiB pages) by setting bit 4 in CR4
+ */
+/*
+void enable_PSE(void) {
+    asm volatile(
+        "movl %%cr4, %%eax\n"
+        "orl 0x00000010, %%eax\n"
+        "movl %%eax, %%cr4"
+        :
+        :
+        : "memory", "cc", "eax"
+    );
+}
+*/
