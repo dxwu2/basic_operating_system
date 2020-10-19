@@ -11,7 +11,7 @@ void idt_setup() {
     for(i = 0; i < NUM_VEC; ++i) {  //offset_15_00 and offset_31_16 missing bc set by SET_IDT_ENTRY
         idt[i].seg_selector = KERNEL_CS;    //set all to ints to be run via kernel code seg
         idt[i].reserved4 = 0;               //reserved fields specify gate type (reserved4 is 3-bit field set to 0 for interrupts)
-        idt[i].reserved3 = 0;               //01110b = interrupt gate, 01111b = trap gate
+        idt[i].reserved3 = (i < 32) ? 1 : 0;               //01110b = interrupt gate, 01111b = trap gate
         idt[i].reserved2 = 1;
         idt[i].reserved1 = 1;
         idt[i].size      = 1;               //=1 for 32-bit gate size

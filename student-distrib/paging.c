@@ -13,6 +13,7 @@ void init_paging(void) {
     /* bit 4 in CR4 needs to be set -> PSE (page size extension) */
     //enable_PSE();
 
+
     /* PAGE DIRECTORY INITIALIZATION */
     /* initialize same stuff first (change for vid memory and kernel later) */
     int i;
@@ -56,16 +57,23 @@ void init_paging(void) {
     page_directory[1].P = 1;        // mark as present
 
     asm volatile(
-        "movl page_directory, %%eax\n"
-        "movl %%eax, %%cr3\n"
-        "movl %%cr0, %%eax\n"
-        "orl 0x80000001, %%eax\n"
-        "movl %%eax, %%cr0\n"
-        "movl %%cr4, %%eax\n"
-        "orl 0x00000010, %%eax\n"
-        "movl %%eax, %%cr4"
+        // enable paging: load page dir address into CR3 
+        "movl %0, %%eax;"
+        "movl %%eax, %%cr3;"
+
+        // allow mixed page sizes: set PSE, bit 4 in CR4
+        "movl %%cr4, %%eax;"
+        "orl $0x00000010, %%eax;"
+        "movl %%eax, %%cr4;"
+
+        // set bit-31 of CR0
+        "movl %%cr0, %%eax;"
+        "orl $0x80000001, %%eax;"
+        "movl %%eax, %%cr0"
+
+        
         :
-        :
+        : "r" (page_directory) 
         : "memory", "cc", "eax"
     );
 
