@@ -43,15 +43,15 @@ void init_paging(void) {
         page_table[i].offset31_12 = 0;  // set to NULL initially
     }
     /* map video memory to physical address - vid mem is at 0xB8000 and must only be ONE 4 kB page */
-    int test = 184;
-    int test2 = VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB;
-    page_table[test].P = 1;
-    page_table[test].U = 0; // vid mem should be set to supervisor only since it is kernel mapping
-    page_table[test].C = 0; // vid mem contains memory mapped I/O and shouldn't be cached
+    // int test = 184;     //Video memory is at address 184 
+    // // int test2 = VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB;
+    // page_table[test].P = 1;
+    // page_table[test].U = 0; // vid mem should be set to supervisor only since it is kernel mapping
+    // page_table[test].C = 0; // vid mem contains memory mapped I/O and shouldn't be cached
 
-    // page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].P = 1;
-    // page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].U = 0; // vid mem should be set to supervisor only since it is kernel mapping
-    // page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].C = 0; // vid mem contains memory mapped I/O and shouldn't be cached
+    page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].P = 1;
+    page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].U = 0; // vid mem should be set to supervisor only since it is kernel mapping
+    page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].C = 0; // vid mem contains memory mapped I/O and shouldn't be cached
 
     // flush_tlb();
 
