@@ -91,7 +91,7 @@ void system_call_test(){
 	 int result = PASS;
 
 	 //int a = 0xB8000, b;
-	 int a = 0x800000 + 8;
+	 int a = 0x800001; // shouldn't work
 	 int b;
 	 int* ptr;	// uninitialized pointer
 	 ptr = &a;	// store the address of a in ptr
