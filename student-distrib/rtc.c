@@ -45,7 +45,7 @@ void rtc_handler(){
     cli(); 
     outb(SREG_C, IDX_PORT);	// select register C
     inb(DATA_PORT);		//throw away contents
-    test_interrupts();
+    // test_interrupts();
     send_eoi(8); //send eoi to RTC
     sti(); //restore
     return;
