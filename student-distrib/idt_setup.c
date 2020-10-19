@@ -1,5 +1,5 @@
 #include "idt_setup.h"
-
+#include "rtc.h"
 #include "keyboard.h"
 
 /* void idt_setup()
@@ -48,7 +48,7 @@ void idt_setup() {
     
     // keyboard entry
     SET_IDT_ENTRY(idt[0x21], keyboard_handler);
-
+    SET_IDT_ENTRY(idt[0x28], rtc_handler);
     SET_IDT_ENTRY(idt[0x80], system_call);
 }
 

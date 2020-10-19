@@ -4,7 +4,7 @@
 #include "i8259.h"
 #include "lib.h"
 
-
+//frequency =  32768 >> (rate-1);
 void rtc_init(){
     //disable interrupts
     cli(); 
@@ -12,8 +12,7 @@ void rtc_init(){
     char b_val = inb(DATA_PORT); //hold the value of regB
     outb(SREG_B, IDX_PORT); //select regB again
     outb(b_val | 0x40, DATA_PORT); //set the 6th bit of reg B to 1 to turn on periodic interrupts 
-
-    int rate = 0x0F; //set to t0 1024 int per second
+    int rate = 0x0F; //initialized at 2hz
     outb(SREG_A, IDX_PORT);  //select regA
 	char a_val = inb(DATA_PORT); //hold the value of reg A
 	outb(SREG_A, IDX_PORT); //select regA again
@@ -21,7 +20,6 @@ void rtc_init(){
     outb(SREG_C, IDX_PORT);	// select register C
     inb(DATA_PORT);		//throw away contents
     enable_irq(8);  //enable irq
-    sti();  //restore
     return;
 }
 void rtc_handler(){
@@ -29,7 +27,7 @@ void rtc_handler(){
     cli(); 
     outb(SREG_C, IDX_PORT);	// select register C
     inb(DATA_PORT);		//throw away contents
-    test_interrupts(); //call the test_interrupts
+    test_interrupts();
     send_eoi(8); //send eoi to RTC
     sti(); //restore
     return;

@@ -87,7 +87,8 @@ void system_call_test(){
 /* Test suite entry point */
 void launch_tests(){
 	// launch your tests here
-	TEST_OUTPUT("idt_test", idt_test());
+	//TEST_OUTPUT("idt_test", idt_test());
 	// divide_by_zero_test();
-	system_call_test();
+	//system_call_test();
+	
 }
