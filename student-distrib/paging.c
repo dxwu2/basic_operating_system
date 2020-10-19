@@ -44,6 +44,7 @@ void init_paging(void) {
     }
     /* map video memory to physical address - vid mem is at 0xB8000 and must only be ONE 4 kB page */
     page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].P = 1;
+    page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].U = 0; // vid mem should be set to supervisor only since it is kernel mapping
     page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].C = 0; // vid mem contains memory mapped I/O and shouldn't be cached
 
     /* first PDE should be for video memory */
@@ -55,9 +56,10 @@ void init_paging(void) {
     /* second PDE should be for kernel (at 4MB - 0x400000 for physical and virtual) */
     page_directory[1].offset31_12 = KERNEL_ADDRESS >> ADDRESS_SHIFT_KB;
     page_directory[1].P = 1;        // mark as present
+    page_directory[1].U = 0;        // kernel stuff should be supervisor only
 
     asm volatile(
-        // enable paging: load page dir address into CR3 
+        // load page dir address into CR3 
         "movl %0, %%eax;"
         "movl %%eax, %%cr3;"
 
@@ -66,7 +68,7 @@ void init_paging(void) {
         "orl $0x00000010, %%eax;"
         "movl %%eax, %%cr4;"
 
-        // set bit-31 of CR0
+        // set bit-31 of CR0 to enable paging
         "movl %%cr0, %%eax;"
         "orl $0x80000001, %%eax;"
         "movl %%eax, %%cr0"
@@ -101,7 +103,7 @@ void enable_paging(void) {
 }
 */
 
-/* void flush_tlb()
+/* void flush_tlb() - TLB needs to be flushed when CR3 reloaded
  * Inputs : none
  * Outputs: none
  * Clobbers : memory (since we performed memory reads or writes to items other than those listed in the input and output operands)
