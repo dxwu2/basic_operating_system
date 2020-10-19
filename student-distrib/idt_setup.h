@@ -9,5 +9,6 @@ void idt_setup(void);
 
 // for assembly linkage
 void KEYBOARD_INTERRUPT(void);
+void RTC_INTERRUPT(void);
 
 #endif

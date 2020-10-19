@@ -78,17 +78,22 @@ void system_call_test(){
 	asm volatile ("int $0x80");
 }
 
-
 /* Checkpoint 2 tests */
 /* Checkpoint 3 tests */
 /* Checkpoint 4 tests */
 /* Checkpoint 5 tests */
 
-
+/* launch_tests
+* Description: Test suite entry point
+* Inputs: None
+* Outputs: None
+* Side Effects: Prints messages to screen if helper test involves printing
+*/
 /* Test suite entry point */
 void launch_tests(){
 	// launch your tests here
 	// TEST_OUTPUT("idt_test", idt_test());
 	// divide_by_zero_test();
 	// system_call_test();
+	// keyboard_test();
 }

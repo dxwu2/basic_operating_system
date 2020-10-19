@@ -13,6 +13,7 @@ static char normal_map[4][16] = {
     {'b', 'n', 'm', ',', '.', '/', '\0', '\0', '\0', ' ', '\0', '\0', '\0', '\0', '\0', '\0'}    // 0x3_
 };
 
+
 // will have to create separate mapping for shift pressed / caps lock fuck
 
 /*
@@ -38,6 +39,9 @@ void keyboard_init(void){
  *   SIDE EFFECTS: reads scancode from keyboard port
  */   
 void keyboard_handler(void){
+    // printf("called keyboard handler\n");
+    cli();
+
     uint8_t scancode;
     uint8_t idx1;
     uint8_t idx2;
@@ -70,4 +74,5 @@ void keyboard_handler(void){
 
     // at the end send an EOI
     send_eoi(KEYBOARD_IRQ_LINE);
+    sti();
 }

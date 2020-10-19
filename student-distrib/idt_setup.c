@@ -1,4 +1,5 @@
 #include "idt_setup.h"
+// #include "rtc.h"
 
 /* void idt_setup()
  * Sets up interrupt descriptor table for inital boot
@@ -46,7 +47,7 @@ void idt_setup() {
     
     // keyboard entry
     SET_IDT_ENTRY(idt[0x21], KEYBOARD_INTERRUPT);
-
+    SET_IDT_ENTRY(idt[0x28], RTC_INTERRUPT);
     SET_IDT_ENTRY(idt[0x80], system_call);
 }
 
