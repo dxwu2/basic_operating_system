@@ -79,23 +79,51 @@ void divide_by_zero_test(){
 * Coverage: idt_setup(), handle_system_call()
 * Files: exceptions.c/h, idt_setup.c/h
 */
+
 void system_call_test(){
 	TEST_HEADER;
 
 	asm volatile ("int $0x80");
 }
 
+/* Paging tests 1 & 2- tests that accessible locations are accessible for vid mem
+ * 
+ * Inputs	: None
+ * Outputs	: None
+ * Side Effects	: Prints exception message
+ */
+ int paging_test1() {
+	 TEST_HEADER;
+
+	 int result = PASS;
+
+	 //int a = 0xB8000, b;
+	 int a = 0x800000 + 8;
+	 int b;
+	 int* ptr;	// uninitialized pointer
+	 ptr = &a;	// store the address of a in ptr
+	 b = *ptr;	// place value at ptr in b
+
+	 return result;
+ }
+
+
 /* Checkpoint 2 tests */
 /* Checkpoint 3 tests */
 /* Checkpoint 4 tests */
 /* Checkpoint 5 tests */
 
-
+/* launch_tests
+* Description: Test suite entry point
+* Inputs: None
+* Outputs: None
+* Side Effects: Prints messages to screen if helper test involves printing
+*/
 /* Test suite entry point */
 void launch_tests(){
 	// launch your tests here
-	//TEST_OUTPUT("idt_test", idt_test());
+	// TEST_OUTPUT("idt_test", idt_test());
 	// divide_by_zero_test();
-	//system_call_test();
-	
+	// system_call_test();
+	// paging_test1();
 }

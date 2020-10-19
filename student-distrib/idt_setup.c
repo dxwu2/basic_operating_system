@@ -1,6 +1,5 @@
 #include "idt_setup.h"
-#include "rtc.h"
-#include "keyboard.h"
+// #include "rtc.h"
 
 /* void idt_setup()
  * Sets up interrupt descriptor table for inital boot
@@ -10,16 +9,16 @@
  */
 void idt_setup() {
     unsigned i;
-    for(i = 0; i < NUM_VEC; ++i) {  //offset_15_00 and offset_31_16 missing bc set by SET_IDT_ENTRY
+    for(i = 0; i < NUM_VEC; i++) {  //offset_15_00 and offset_31_16 missing bc set by SET_IDT_ENTRY
         idt[i].seg_selector = KERNEL_CS;    //set all to ints to be run via kernel code seg
         idt[i].reserved4 = 0;               //reserved fields specify gate type (reserved4 is 3-bit field set to 0 for interrupts)
-        idt[i].reserved3 = 0;               //01110b = interrupt gate, 01111b = trap gate
+        idt[i].reserved3 = (i < 32) ? 1 : 0;               //01110b = interrupt gate, 01111b = trap gate
         idt[i].reserved2 = 1;
         idt[i].reserved1 = 1;
         idt[i].size      = 1;               //=1 for 32-bit gate size
         idt[i].reserved0 = 0;
         idt[i].dpl       = (i == 0x80) ? 3 : 1;   //if executing system call (vector 0x80) we must be in user privilege (3)
-        idt[i].present   = 1;                //all idt desc slots are empty before SET_IDT_ENTRY called 
+        idt[i].present   = 1;                //all idt desc slots are empty before SET_IDT_ENTRY called
     }
 
     //str for SET_IDT_ENTRY is idt_desc_t struct
@@ -47,8 +46,8 @@ void idt_setup() {
     //We still need entries for system calls and devices
     
     // keyboard entry
-    SET_IDT_ENTRY(idt[0x21], keyboard_handler);
-    SET_IDT_ENTRY(idt[0x28], rtc_handler);
+    SET_IDT_ENTRY(idt[0x21], KEYBOARD_INTERRUPT);
+    SET_IDT_ENTRY(idt[0x28], RTC_INTERRUPT);
     SET_IDT_ENTRY(idt[0x80], system_call);
 }
 

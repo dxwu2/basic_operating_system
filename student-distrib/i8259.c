@@ -50,8 +50,6 @@ void i8259_init(void) {
 
     // need to enable slave PIC - IRQ2 on master (otherwise slave is always masked)
     enable_irq(2);
-    
-    // sti();
 }
 
 /*

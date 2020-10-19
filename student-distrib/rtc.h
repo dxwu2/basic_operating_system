@@ -8,5 +8,6 @@
 
 //used to initialize the RTC
 void rtc_init();
+
 //simple handler for rtc checkpoint one test
-void rtc_handler();
+extern void rtc_handler();
