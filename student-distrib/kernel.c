@@ -8,7 +8,8 @@
 #include "i8259.h"
 #include "debug.h"
 #include "tests.h"
-#include "keyboard.h"
+// #include "keyboard.h"
+#include "paging.h"
 
 #define RUN_TESTS
 
@@ -146,7 +147,8 @@ void entry(unsigned long magic, unsigned long addr) {
      * PIC, any other initialization stuff... */
 
     keyboard_init();
-    // outb(0xF2, 0x60);      // set scan code set 2 to keyboard data port
+
+    init_paging();
 
     /* Enable interrupts */
     /* Do not enable the following until after you have set up your

@@ -1,7 +1,5 @@
 #include "idt_setup.h"
 
-#include "keyboard.h"
-
 /* void idt_setup()
  * Sets up interrupt descriptor table for inital boot
  * Inputs: None
@@ -20,11 +18,6 @@ void idt_setup() {
         idt[i].reserved0 = 0;
         idt[i].dpl       = (i == 0x80) ? 3 : 1;   //if executing system call (vector 0x80) we must be in user privilege (3)
         idt[i].present   = 1;                //all idt desc slots are empty before SET_IDT_ENTRY called
-
-        // if(i < 32){
-        //     idt[i].reserved3 = 1;
-        // }
-        
     }
 
     //str for SET_IDT_ENTRY is idt_desc_t struct
@@ -52,7 +45,7 @@ void idt_setup() {
     //We still need entries for system calls and devices
     
     // keyboard entry
-    SET_IDT_ENTRY(idt[0x21], keyboard_handler);
+    SET_IDT_ENTRY(idt[0x21], KEYBOARD_INTERRUPT);
 
     SET_IDT_ENTRY(idt[0x80], system_call);
 }

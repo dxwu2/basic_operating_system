@@ -7,4 +7,7 @@
 /* sets up and fills interrupt descriptor table entries/gates */
 void idt_setup(void);
 
+// for assembly linkage
+void KEYBOARD_INTERRUPT(void);
+
 #endif
