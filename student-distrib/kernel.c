@@ -8,7 +8,7 @@
 #include "i8259.h"
 #include "debug.h"
 #include "tests.h"
-// #include "keyboard.h"
+#include "keyboard.h"
 #include "paging.h"
 
 #define RUN_TESTS
