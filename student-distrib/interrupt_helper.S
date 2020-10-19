@@ -15,5 +15,5 @@ KEYBOARD_INTERRUPT:
 
         popfl       # popping all flags
         popal       # popping all registers
-        sti
+        sti         # end critical section
         iret        # per osdev, need iret since interrupt context
