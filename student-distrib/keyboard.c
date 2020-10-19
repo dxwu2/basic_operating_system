@@ -8,15 +8,29 @@
 // making a map of scan code set 2 (https://wiki.osdev.org/PS/2_Keyboard)
 // tedious as shit
 // not worrying about keyboard, so just go up to 0x50 range
-static char normal_map[6][16] = {
-    // 0    1     2     3       4    5      6    7     8    9    10    11    12     13    14    15
-    {'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '`', '\0'},   // 0x0_ are the F_ keys (1 for now)
-    {'\0', '\0', '\0', '\0', '\0', 'q', '1', '\0', '\0', '\0', 'z', 's', 'a', 'w', '2', '\0'},    // 0x1_
-    {'\0', 'c', 'x', 'd', 'e', '4', '3', '\0', '\0', ' ', 'v', 'f', 't', 'r', 'e', '\0'},     // 0x2_
-    {'\0', 'n', 'b', 'h', 'g', 'y', '6', '\0', '\0', '\0', 'm', 'j', 'u', '7', '8', '\0'},    // 0x3_
-    {'\0', ',', 'k', 'i', 'o', '0', '9', '\0', '\0', '.', '/', 'l', ';', 'p', '-', '\0'},   // 0x4_
-    {'\0', '\0', 39, '\0', '[', '=', '\0', '\0', '\0', '\0', '\0', ']', '\0', 92, '\0', '\0'}   // 0x5_ ; 39 is ' ; 92 is '\'
+
+// scan code set 2
+// static char normal_map[6][16] = {
+//     // 0    1     2     3       4    5      6    7     8    9    10    11    12     13    14    15
+//     {'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '`', '\0'},   // 0x0_ are the F_ keys (1 for now)
+//     {'\0', '\0', '\0', '\0', '\0', 'q', '1', '\0', '\0', '\0', 'z', 's', 'a', 'w', '2', '\0'},    // 0x1_
+//     {'\0', 'c', 'x', 'd', 'e', '4', '3', '\0', '\0', ' ', 'v', 'f', 't', 'r', '5', '\0'},     // 0x2_
+//     {'\0', 'n', 'b', 'h', 'g', 'y', '6', '\0', '\0', '\0', 'm', 'j', 'u', '7', '8', '\0'},    // 0x3_
+//     {'\0', ',', 'k', 'i', 'o', '0', '9', '\0', '\0', '.', '/', 'l', ';', 'p', '-', '\0'},   // 0x4_
+//     {'\0', '\0', 39, '\0', '[', '=', '\0', '\0', '\0', '\0', '\0', ']', '\0', 92, '\0', '\0'}   // 0x5_ ; 39 is ' ; 92 is '\'
+// };
+
+// scan code set 1 - not worrying about keypad or F keys
+static char normal_map[4][16] = {
+    // 0    1     2    3   4     5     6   7    8    9    10   11   12   13   14   15
+    {'\0', '\0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '\0', '\0'},   // 0x0_
+    {'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\0', '\0', 'a', 's'},    // 0x1_
+    {'d', 'f', 'g', 'h', 'j', 'k', 'l', ';', 39, '`', '\0', 92, 'z', 'x', 'c', 'v'},     // 0x2_ ; 39 is ' ; 92 is '\'
+    {'b', 'n', 'm', ',', '.', '/', '\0', '\0', '\0', ' ', '\0', '\0', '\0', '\0', '\0', '\0'},    // 0x3_
+    // {'\0', ',', 'k', 'i', 'o', '0', '9', '\0', '\0', '.', '/', 'l', ';', 'p', '-', '\0'},   // 0x4_
+    // {'\0', '\0', 39, '\0', '[', '=', '\0', '\0', '\0', '\0', '\0', ']', '\0', 92, '\0', '\0'}   // 0x5_
 };
+
 
 // will have to create separate mapping for shift pressed / caps lock fuck
 
@@ -44,31 +58,39 @@ void keyboard_init(void){
  *   SIDE EFFECTS: reads scancode from keyboard port
  */   
 void keyboard_handler(void){
+    // printf("called keyboard handler\n");
+    cli();
+
     uint8_t scancode;
-    uint8_t letter;
     uint8_t idx1;
     uint8_t idx2;
+    char letter;
 
     // press key -> generates interrupt -> calls handler (THIS)
     //  -> figure out what key was pressed and process it (print to screen)
 
-    // first need to read data to get scancode
     scancode = inb(KEYBOARD_PORT);
 
     // OOB check
-    if(0 < scancode || scancode > 0x5F){
+    if(0 > scancode || scancode > 0xD8){
         printf("Key was pressed");
     }
-    // determine scan code if pressed / not released (not released is 0xF0 per OSDEV)
-    else if(!(scancode & 0xF0)){
-        idx1 = (scancode & 0xF0) >> 4;      // grab high 4 bits to determine group
+    // determine scan code if pressed / not released
+    // 0x2D X pressed, 0xAD X released -> diff of 0x80 -> and 0x80!
+    if(!(scancode & 0x80)){
+        idx1 = (scancode & 0xF0) >> 4;      // grab high 4 bits to determine group, rshift by 4 to get raw number
         idx2 = (scancode & 0x0F);           // grab low 4 bits to determine specific char
-        letter = normal_map[idx1][idx2];
-        printf("%d", letter);
+        // placeholder test for now, not looking at indices > 3
+        if(idx1 > 3){
+            printf("Key was pressed");
+        }
+        else{
+            letter = normal_map[idx1][idx2];
+            printf("%c", letter);
+        }
     }
-
-    // SET_IDT_ENTRY(idt[0x20], keyboard_handler);
 
     // at the end send an EOI
     send_eoi(KEYBOARD_IRQ_LINE);
+    sti();
 }
