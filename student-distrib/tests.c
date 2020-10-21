@@ -107,6 +107,19 @@ void system_call_test(){
 	 return result;
  }
 
+/* Tests if Page Fault Exception fired on dereferencing null ptr
+ * 
+ * Inputs	: None
+ * Outputs	: None
+ * Side Effects	: Prints Page Fault exception message
+ */
+void null_test(){
+	TEST_HEADER;
+
+	int* ptr = NULL;
+	int test;
+	test = *ptr;
+}
 
 /* Checkpoint 2 tests */
 /* Checkpoint 3 tests */
@@ -126,4 +139,5 @@ void launch_tests(){
 	// divide_by_zero_test();
 	// system_call_test();
 	// paging_test1();
+	// null_test();
 }

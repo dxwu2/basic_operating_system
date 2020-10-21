@@ -147,8 +147,8 @@ void entry(unsigned long magic, unsigned long addr) {
 
     keyboard_init();
 
-    printf("Enabling Interrupts\n");
     init_paging();
+    printf("Enabling Interrupts\n");
 
     /* Enable interrupts */
     /* Do not enable the following until after you have set up your
