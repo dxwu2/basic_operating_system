@@ -2,7 +2,10 @@
 
 #include "paging.h"
 
-
+/* void init_paging(void)
+ *
+ * 
+ */
 void init_paging(void) {
 
     /* bit 31 in CR0 needs to be set -> PG(page enable), paging is optional so must be enabled for use */
@@ -44,6 +47,8 @@ void init_paging(void) {
     /* map video memory to physical address - vid mem is at 0xB8000 and must only be ONE 4 kB page */
     page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].P = 1;
     page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].C = 0; // vid mem contains memory mapped I/O and shouldn't be cached
+    // ADD THIS LINE FRICKKKKK
+    page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].offset31_12 = 0xB8;
 
     /* first PDE should be for video memory */
     page_directory[0].P = 1;        // mark as present
@@ -56,13 +61,14 @@ void init_paging(void) {
     page_directory[1].P = 1;        // mark as present
 
     asm volatile(
-        "movl page_directory, %%eax\n"
-        "movl %%eax, %%cr3\n"
-        "movl %%cr0, %%eax\n"
-        "orl 0x80000001, %%eax\n"
-        "movl %%eax, %%cr0\n"
-        "movl %%cr4, %%eax\n"
-        "orl 0x00000010, %%eax\n"
+        // enable paging: load page dir address into CR3
+        "movl page_directory, %%eax;"
+        "movl %%eax, %%cr3;"
+        "movl %%cr0, %%eax;"
+        "orl $0x80000001, %%eax;"
+        "movl %%eax, %%cr0;"
+        "movl %%cr4, %%eax;"
+        "orl $0x00000010, %%eax;"
         "movl %%eax, %%cr4"
         :
         :

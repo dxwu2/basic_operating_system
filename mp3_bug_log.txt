@@ -2,4 +2,5 @@ mp3 Bug Log
 
 mp3.1
 Paging:
-- 
+Bug: video memory corrupted after init Paging
+Fix: forgot to add line page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].offset31_12 = 0xB8 mapping this page to the page table.

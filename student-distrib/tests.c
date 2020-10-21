@@ -1,6 +1,7 @@
 #include "tests.h"
 #include "x86_desc.h"
 #include "lib.h"
+#include "paging.h"
 
 #define PASS 1
 #define FAIL 0
@@ -77,6 +78,22 @@ void system_call_test(){
 
 	asm volatile ("int $0x80");
 }
+
+/* Paging Tests */
+/* Paging Test 1 - tests that inaccessible locations are inaccessible
+ * Inputs	:	None
+ * Outputs	:	None
+ * Side Effects	:	Freeze the kernel
+ */
+/*
+void paging_test(){
+	TEST_HEADER;
+
+	int * ptr = (*int) (0xB8000);
+
+
+}
+*/
 
 /* Checkpoint 2 tests */
 /* Checkpoint 3 tests */
