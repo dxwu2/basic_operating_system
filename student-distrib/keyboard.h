@@ -20,6 +20,8 @@
 #define CAPS_LOCK 0x3A
 #define CTRL 0x1D
 #define CTRL_RELEASE 0x9D
+#define ALT 0x38
+#define ALT_RELEASE 0xB8
 #define ENTER 0x1C
 #define L 0x26
 
@@ -31,6 +33,7 @@ int buf_idx;                          // idx for current place in keyboard buffe
 int shift_pressed;
 int ctrl_pressed;
 int caps_lock_pressed;
+int alt_pressed;
 
 // initialize keyboard for use
 void keyboard_init(void);

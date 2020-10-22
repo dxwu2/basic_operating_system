@@ -47,14 +47,12 @@ void keyboard_init(void){
  *   SIDE EFFECTS: reads scancode from keyboard port
  */   
 void keyboard_handler(void){
-    // printf("called keyboard handler\n");
-    cli();
-
-    uint8_t scancode;
+    cli();      // begin crit section
 
     // press key -> generates interrupt -> calls handler (THIS)
     //  -> figure out what key was pressed and process it (print to screen)
 
+    uint8_t scancode;
     scancode = inb(KEYBOARD_PORT);
 
     // OOB check
@@ -66,7 +64,7 @@ void keyboard_handler(void){
     switch (scancode)
     {
     case CTRL:
-        ctrl_pressed = 1;       // just flip the state
+        ctrl_pressed = 1;
         break;
     case CTRL_RELEASE:
         ctrl_pressed = 0;
@@ -75,21 +73,19 @@ void keyboard_handler(void){
     case LSHIFT:
     case RSHIFT:
         shift_pressed = 1;
-        // printf("pressed\n");
         break;
     case LSHIFT_RELEASE:
     case RSHIFT_RELEASE:
         shift_pressed = 0;
-        // printf("released\n");
+        break;
+    case ALT:
+        alt_pressed = 1;
+        break;
+    case ALT_RELEASE:
+        alt_pressed = 0;
         break;
     case CAPS_LOCK:
-        caps_lock_pressed = !caps_lock_pressed;     // this is a toggle state per osdev
-        // if(caps_lock_pressed){
-        //     printf(" pressed ");
-        // }
-        // else{
-        //     printf(" released ");
-        // }
+        caps_lock_pressed = !caps_lock_pressed;     // this is a toggle state per osdev, so just flip state
         break;
     case ENTER:
         keyboard_return();
@@ -136,8 +132,11 @@ void process_key(uint8_t scancode){
         if(scancode == L){
             clear();                    // clear screen -> is that all?
             // clear keyboard buffer but not terminal read? how do i go about this?
-            return;
         }
+        return;
+    }
+    else if(alt_pressed){
+        return;     // do not do anything (yet)
     }
     else if(shift_pressed){
         // if shift and caps_lock, lower case
@@ -148,9 +147,6 @@ void process_key(uint8_t scancode){
         else{
             letter = shift_map[idx1][idx2];
         }
-
-        // reset state
-        shift_pressed = 0;
     }
     else if(caps_lock_pressed){
         letter = shift_map[idx1][idx2];

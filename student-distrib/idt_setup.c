@@ -22,32 +22,32 @@ void idt_setup() {
     }
 
     //str for SET_IDT_ENTRY is idt_desc_t struct
-    SET_IDT_ENTRY(idt[0x00], divide_err_excep);
-    SET_IDT_ENTRY(idt[0x01], debug_excep);
-    SET_IDT_ENTRY(idt[0x02], nmi_excep);
-    SET_IDT_ENTRY(idt[0x03], breakpoint_excep);
-    SET_IDT_ENTRY(idt[0x04], overflow_excep);
-    SET_IDT_ENTRY(idt[0x05], bound_range_excep);
-    SET_IDT_ENTRY(idt[0x06], invalid_opcode_excep);
-    SET_IDT_ENTRY(idt[0x07], device_not_avail_excep);
-    SET_IDT_ENTRY(idt[0x08], double_fault_excep);
-    SET_IDT_ENTRY(idt[0x09], coproc_seg_overrun_excep);
-    SET_IDT_ENTRY(idt[0x0A], invalid_tss_excep);
-    SET_IDT_ENTRY(idt[0x0B], seg_not_present_excep);
-    SET_IDT_ENTRY(idt[0x0C], stack_seg_fault_excep);
-    SET_IDT_ENTRY(idt[0x0D], general_protection_excep);
-    SET_IDT_ENTRY(idt[0x0E], page_fault_excep);
+    SET_IDT_ENTRY(idt[0x00], DIVIDE_ERR_EXCEP);
+    SET_IDT_ENTRY(idt[0x01], DEBUG_EXCEP);
+    SET_IDT_ENTRY(idt[0x02], NMI_EXCEP);
+    SET_IDT_ENTRY(idt[0x03], BREAKPOINT_EXCEP);
+    SET_IDT_ENTRY(idt[0x04], OVERFLOW_EXCEP);
+    SET_IDT_ENTRY(idt[0x05], BOUND_RANGE_EXCEP);
+    SET_IDT_ENTRY(idt[0x06], INVALID_OPCODE_EXCEP);
+    SET_IDT_ENTRY(idt[0x07], DEVICE_NOT_AVAIL_EXCEP);
+    SET_IDT_ENTRY(idt[0x08], DOUBLE_FAULT_EXCEP);
+    SET_IDT_ENTRY(idt[0x09], COPROC_SEG_OVERRUN_EXCEP);
+    SET_IDT_ENTRY(idt[0x0A], INVALID_TSS_EXCEP);
+    SET_IDT_ENTRY(idt[0x0B], SEG_NOT_PRESENT_EXCEP);
+    SET_IDT_ENTRY(idt[0x0C], STACK_SEG_FAULT_EXCEP);
+    SET_IDT_ENTRY(idt[0x0D], GENERAL_PROTECTION_EXCEP);
+    SET_IDT_ENTRY(idt[0x0E], PAGE_FAULT_EXCEP);
     //0x0F entry intel-reserved
-    SET_IDT_ENTRY(idt[0x10], fpu_float_err_excep);
-    SET_IDT_ENTRY(idt[0x11], align_check_excep);
-    SET_IDT_ENTRY(idt[0x12], machine_check_excep);
-    SET_IDT_ENTRY(idt[0x13], simd_float_err_excep);
-
-    //We still need entries for system calls and devices
+    SET_IDT_ENTRY(idt[0x10], FPU_FLOAT_ERR_EXCEP);
+    SET_IDT_ENTRY(idt[0x11], ALIGN_CHECK_EXCEP);
+    SET_IDT_ENTRY(idt[0x12], MACHINE_CHECK_EXCEP);
+    SET_IDT_ENTRY(idt[0x13], SIMD_FLOAT_ERR_EXCEP);
     
     // keyboard entry
     SET_IDT_ENTRY(idt[0x21], KEYBOARD_INTERRUPT);
     SET_IDT_ENTRY(idt[0x28], RTC_INTERRUPT);
-    SET_IDT_ENTRY(idt[0x80], system_call);
+    
+    //System call entry
+    SET_IDT_ENTRY(idt[0x80], SYSTEM_CALL);
 }
 
