@@ -156,33 +156,37 @@ void terminal_test1(){
 	}
 }
 
-/* Tests if terminal_read/write properly reads data from keyboard buffer
-	and writes data to terminal correctly
- * 
+/* Tests if CTRL+l/L clears screen and resets keyboard buffer, but not the read buffer
+ *
  * Inputs	: None
  * Outputs	: None
- * Side Effects	: While loop of terminal_read and terminal_write per doc
+ * Side Effects	: For abcde(CTRL+L)fghijk('\n), read buffer should be abcdefghijk 
  */
 void terminal_test2(){
+	int i;
 	int32_t cnt;
-	char* buf;
-	while (1)
-	{
-		cnt = terminal_read(1, buf, KEYBOARD_BUF_SIZE);
-		// terminal_write(1, buf, cnt);
+	char* buf[KEYBOARD_BUF_SIZE];
+	cnt = terminal_read(1, buf, KEYBOARD_BUF_SIZE);
+
+	for(i = 0; i < cnt; i++){
+		putc(((char*)buf)[i]);
 	}
+
+	printf("\n");
+	terminal_write(1, buf, cnt);
 }
 
-/* Tests if terminal_write properly writes data to terminal correctly
+/* Testing to see if terminal_write does not stop writing at a null byte
  * Inputs	: None
  * Outputs	: None
- * Side Effects	: Testing to see if terminal_write does not stop writing at a null byte
+ * Side Effects	: If done correctly, should have a bunch of null bytes written after terminal_write call
  */
 void terminal_test3(){
 	int i;
 	int32_t cnt;
 	char* buf[BUFSIZE];
 
+	printf("Original buffer: ");
 	// for loop will only go up to 15 characters, meaning rest are null bytes
 	for(i = 0; i < 15; i++){
 		((char*)buf)[i] = i + 65;		// 65 for start of capital letters
@@ -190,7 +194,7 @@ void terminal_test3(){
 	}
 
 	// new line to compare
-	putc('\n');
+	printf("\nTesting terminal_write: ");
 	cnt = terminal_write(1, buf, KEYBOARD_BUF_SIZE);
 	printf("%d", cnt);									// prints number of bytes written, should not stop at nulll byte!
 }
@@ -209,6 +213,6 @@ void terminal_test3(){
 void launch_tests(){
 	// launch your tests here
 	// terminal_test1();
-	// terminal_test2();
+	terminal_test2();
 	// terminal_test3();
 }

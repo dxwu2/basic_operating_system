@@ -30,23 +30,27 @@ int32_t terminal_close(int32_t fd){
 int32_t terminal_read(int32_t fd, void* buf, int32_t nbytes){
     int i;      // for looping, start at 0
 
-    if(nbytes <= 0 || buf == NULL){
-        return -1;
-    }
+    // wait until key is actually pressed
+    while(!flag);
 
-    // if keep waiting if no key was pressed OR buf_idx reached its limit
-    while(!flag && buf_idx < KEYBOARD_BUF_SIZE - 1);
+    // read should only return when enter key is pressed and always add newline character at end of buffer before returning
+    while(keyboard_buf[strlen(keyboard_buf)-1] != '\n');
+
+    // printf("reached end!\n");
 
     for(i = 0; (i < nbytes) && (i < KEYBOARD_BUF_SIZE); i++){
-        ((char*)buf)[i] = keyboard_buf[i];      // read from keyboard buffer TO buf
+        ((char*)buf)[i] = keyboard_buf[i];
         if(keyboard_buf[i] == '\n'){
-            flag = 0;
             break;
         }
     }
 
-    clear_keyboard_buf();       // need to clear the buffer at the end
-    return i+1;                 // return size of buffer
+    // use memcpy from lib.c to copy from keyboard_buf to buf
+    // i+1 because we need to look at '\n'
+    // memcpy(buf, &(keyboard_buf), nbytes);
+
+    clear_keyboard_buf();       // need to clear the buffer at the end, also reset flag
+    return i;                 // return size of buffer
 }
 
 

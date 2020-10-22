@@ -141,8 +141,7 @@ void process_key(uint8_t scancode){
     if(ctrl_pressed){
         // clear screen if CTRL+L
         if(scancode == L){
-            clear();                    // clear screen -> is that all?
-            // clear keyboard buffer but not terminal read? how do i go about this?
+            clear();                    // clear screen
         }
         return;
     }
@@ -175,6 +174,7 @@ void process_key(uint8_t scancode){
         }
     }
 
+    // tell terminal driver that a key was pressed
     flag = 1;
     
     // add letter to current buffer
@@ -233,8 +233,9 @@ void clear_keyboard_buf(void){
         buf_idx--;
     }
 
-    // reset index to 0
+    // reset index and flag to 0
     buf_idx = 0;
+    flag = 0;
 }
 
 /*
