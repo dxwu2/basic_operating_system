@@ -25,6 +25,8 @@ void clear(void) {
 
     screen_x = 0;
     screen_y = 0;
+
+    update_cursor(screen_x, screen_y);
 }
 
 /* Standard printf().
@@ -180,9 +182,9 @@ void putc(uint8_t c) {
         screen_x++; // fix this
         screen_x %= NUM_COLS;
         screen_y = (screen_y + (screen_x / NUM_COLS)) % NUM_ROWS;
-
-        // update cursor function ...
     }
+    // update cursor function ...
+    update_cursor(screen_x, screen_y);
 }
 
 /* int8_t* itoa(uint32_t value, int8_t* buf, int32_t radix);
@@ -478,4 +480,18 @@ void test_interrupts(void) {
     for (i = 0; i < NUM_ROWS * NUM_COLS; i++) {
         video_mem[i << 1]++;
     }
+}
+
+
+/* void update_cursor(void)
+ * Inputs: void
+ * Return Value: void
+ * Function: increments video memory. To be used to test rtc */
+void update_cursor(int x, int y) {
+    uint16_t pos = y * NUM_COLS + x;
+
+    outb(0x0F, 0x3D4);
+	outb((uint8_t) (pos & 0xFF), 0x3D5);
+	outb(0x0E, 0x3D4);
+	outb((uint8_t) ((pos >> 8) & 0xFF), 0x3D5);
 }
