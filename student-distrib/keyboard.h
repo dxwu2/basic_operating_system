@@ -18,6 +18,7 @@
 #define LSHIFT_RELEASE 0xAA
 #define RSHIFT_RELEASE 0xB6
 #define CAPS_LOCK 0x3A
+#define CAPS_LOCK_RELEASE 0xBA
 #define CTRL 0x1D
 #define CTRL_RELEASE 0x9D
 #define ALT 0x38
@@ -25,6 +26,11 @@
 #define ENTER 0x1C
 #define L 0x26
 #define BACKSPACE 0x0E
+#define TAB 0x0F
+#define TAB_RELEASE 0x8F
+
+// flag indicating whether key was pressed - should be volatile
+volatile int flag;
 
 // for the keyboard buffer
 char keyboard_buf[KEYBOARD_BUF_SIZE];     // need keyboard buffer -> size 128 char but last character is null '\0'

@@ -87,6 +87,8 @@ void keyboard_handler(void){
     case CAPS_LOCK:
         caps_lock_pressed = !caps_lock_pressed;     // this is a toggle state per osdev, so just flip state
         break;
+    case CAPS_LOCK_RELEASE:
+        break;
     case ENTER:
         keyboard_return();
         break;
@@ -173,6 +175,8 @@ void process_key(uint8_t scancode){
         }
     }
 
+    flag = 1;
+    
     // add letter to current buffer
     add_to_buf(letter);
     putc(letter);
@@ -242,7 +246,8 @@ void clear_keyboard_buf(void){
  *   SIDE EFFECTS: clears keyboard buffer afterwards
  */ 
 void keyboard_return(void){
-    // code to send to terminal ?
+    keyboard_buf[buf_idx] = '\n';       // insert into buffer
+    buf_idx++;
     putc('\n');
-    clear_keyboard_buf();
+    // clear_keyboard_buf();
 }

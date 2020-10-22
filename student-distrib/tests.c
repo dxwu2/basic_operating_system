@@ -1,9 +1,11 @@
 #include "tests.h"
 #include "x86_desc.h"
 #include "lib.h"
+#include "terminal.h"
 
 #define PASS 1
 #define FAIL 0
+#define BUFSIZE 128		// for testing terminal_read/write
 
 /* format these macros as you see fit */
 #define TEST_HEADER 	\
@@ -122,6 +124,77 @@ void null_test(){
 }
 
 /* Checkpoint 2 tests */
+
+/* Tests if terminal_read/write properly reads data from keyboard buffer
+	and writes data to terminal correctly
+ * 
+ * Inputs	: None
+ * Outputs	: None
+ * Side Effects	: Echos whatever was typed
+ */
+void terminal_test1(){
+	int32_t cnt;
+	char* buf;
+	char* echo;
+	char* terminal;
+
+	while(1){
+		terminal = "391OS> ";
+		echo = "You said: ";
+		terminal_write(1, terminal, 7);
+
+		while(keyboard_buf[strlen(keyboard_buf)-1] != '\n');
+
+		if(keyboard_buf[0] == '\n'){
+			clear_keyboard_buf();
+			continue;
+		}
+		cnt = terminal_read(1, buf, KEYBOARD_BUF_SIZE);
+		
+		terminal_write(1, echo, 10);
+		terminal_write(1, buf, cnt);
+	}
+}
+
+/* Tests if terminal_read/write properly reads data from keyboard buffer
+	and writes data to terminal correctly
+ * 
+ * Inputs	: None
+ * Outputs	: None
+ * Side Effects	: While loop of terminal_read and terminal_write per doc
+ */
+void terminal_test2(){
+	int32_t cnt;
+	char* buf;
+	while (1)
+	{
+		cnt = terminal_read(1, buf, KEYBOARD_BUF_SIZE);
+		// terminal_write(1, buf, cnt);
+	}
+}
+
+/* Tests if terminal_write properly writes data to terminal correctly
+ * Inputs	: None
+ * Outputs	: None
+ * Side Effects	: Testing to see if terminal_write does not stop writing at a null byte
+ */
+void terminal_test3(){
+	int i;
+	int32_t cnt;
+	char* buf[BUFSIZE];
+
+	// for loop will only go up to 15 characters, meaning rest are null bytes
+	for(i = 0; i < 15; i++){
+		((char*)buf)[i] = i + 65;		// 65 for start of capital letters
+		putc(((char*)buf)[i]);			// print out original 15 characters
+	}
+
+	// new line to compare
+	putc('\n');
+	cnt = terminal_write(1, buf, KEYBOARD_BUF_SIZE);
+	printf("%d", cnt);									// prints number of bytes written, should not stop at nulll byte!
+}
+
 /* Checkpoint 3 tests */
 /* Checkpoint 4 tests */
 /* Checkpoint 5 tests */
@@ -135,9 +208,7 @@ void null_test(){
 /* Test suite entry point */
 void launch_tests(){
 	// launch your tests here
-	// TEST_OUTPUT("idt_test", idt_test());
-	// divide_by_zero_test();
-	// system_call_test();
-	// paging_test1();
-	// null_test();
+	// terminal_test1();
+	// terminal_test2();
+	// terminal_test3();
 }
