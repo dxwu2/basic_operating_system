@@ -43,22 +43,29 @@ void init_paging(void) {
         page_table[i].offset31_12 = 0;  // set to NULL initially
     }
     /* map video memory to physical address - vid mem is at 0xB8000 and must only be ONE 4 kB page */
+    // int test = 184;     //Video memory is at address 184 
+    // // int test2 = VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB;
+    // page_table[test].P = 1;
+    // page_table[test].U = 0; // vid mem should be set to supervisor only since it is kernel mapping
+    // page_table[test].C = 0; // vid mem contains memory mapped I/O and shouldn't be cached
+
     page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].P = 1;
     page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].U = 0; // vid mem should be set to supervisor only since it is kernel mapping
     page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].C = 0; // vid mem contains memory mapped I/O and shouldn't be cached
-    //page_table[184].P = 1;
-    //page_table[184].C = 0;
-    //page_table[184].C = 0;
+    page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].offset31_12 = 0xB8;
+
+    // flush_tlb();
 
     /* first PDE should be for video memory */
     page_directory[0].P = 1;        // mark as present
     //page_directory[0].D = 0;        // these pages contain memory mapped I/O and should not be cached
     page_directory[0].S = 0;        // pages are 4 kB ONLY for this first PDE (due to video memory)
     page_directory[0].offset31_12 = ((uint32_t) page_table >> ADDRESS_SHIFT_KB) & 0xFFF;    // set bits 31-12 to address of page table (right shifted)
+
     
     /* second PDE should be for kernel (at 4MB - 0x400000 for physical and virtual) */
-    //page_directory[1].offset31_12 = KERNEL_ADDRESS >> ADDRESS_SHIFT_KB;
-    page_directory[1].offset31_12 = KERNEL_ADDRESS >> ADDRESS_SHIFT_KB;
+    // page_directory[1].offset31_12 = KERNEL_ADDRESS >> ADDRESS_SHIFT_KB; 
+    page_directory[1].offset31_12 = 1024; 
     page_directory[1].P = 1;        // mark as present
     page_directory[1].U = 0;        // kernel stuff should be supervisor only
 
@@ -124,7 +131,7 @@ void flush_tlb(void) {
         "movl %%eax, %%cr3;"
         :
         : 
-        : "eax", "cc"
+        : "eax"     // clobbered
     );
     return;
 }

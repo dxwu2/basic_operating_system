@@ -34,7 +34,14 @@ int idt_test(){
 
 	int i;
 	int result = PASS;
-	for (i = 0; i < 10; ++i){
+	for (i = 0; i < 15; ++i){
+		if ((idt[i].offset_15_00 == NULL) && 
+			(idt[i].offset_31_16 == NULL)){
+			assertion_failure();
+			result = FAIL;
+		}
+	}
+	for (i = 16; i < 20; ++i){
 		if ((idt[i].offset_15_00 == NULL) && 
 			(idt[i].offset_31_16 == NULL)){
 			assertion_failure();
@@ -100,17 +107,37 @@ void system_call_test(){
 	 return result;
  }
 
+/* Tests if Page Fault Exception fired on dereferencing null ptr
+ * 
+ * Inputs	: None
+ * Outputs	: None
+ * Side Effects	: Prints Page Fault exception message
+ */
+void null_test(){
+	TEST_HEADER;
+
+	int* ptr = NULL;
+	int test;
+	test = *ptr;
+}
 
 /* Checkpoint 2 tests */
 /* Checkpoint 3 tests */
 /* Checkpoint 4 tests */
 /* Checkpoint 5 tests */
 
-
+/* launch_tests
+* Description: Test suite entry point
+* Inputs: None
+* Outputs: None
+* Side Effects: Prints messages to screen if helper test involves printing
+*/
 /* Test suite entry point */
 void launch_tests(){
 	// launch your tests here
-	//TEST_OUTPUT("idt_test", idt_test());
+	// TEST_OUTPUT("idt_test", idt_test());
 	// divide_by_zero_test();
-	system_call_test();
+	// system_call_test();
+	// paging_test1();
+	// null_test();
 }
