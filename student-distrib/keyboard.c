@@ -130,6 +130,9 @@ void process_key(uint8_t scancode){
         return;     // OOB since does not exist in my mappings
     }
 
+    // grab letter as normal - if no coniditons are met we keep normal mapping
+    letter = normal_map[idx1][idx2];
+
     if(ctrl_pressed){
         // clear screen if CTRL+L
         if(scancode == L){
@@ -138,24 +141,33 @@ void process_key(uint8_t scancode){
         }
         return;
     }
-    else if(alt_pressed){
+    if(alt_pressed){
         return;     // do not do anything (yet)
     }
-    else if(shift_pressed){
-        letter = shift_map[idx1][idx2];     // default to shift
-    }
-    else if(caps_lock_pressed){
+    if(caps_lock_pressed){
         letter = shift_map[idx1][idx2];
 
-        // if shift and caps_lock AND letter -> should be normal
+        // anything not letters should not shift
         // upper case goes from 65 to 90, so check if not a letter (i.e. a number)
         if(!(65 <= letter && letter <= 90)){
             letter = normal_map[idx1][idx2];
         }
     }
-    // normal case
-    else{
-        letter = normal_map[idx1][idx2];
+    if(shift_pressed){
+        // check if caps_lock_pressed -> if so reverse letter scheme
+        if(caps_lock_pressed){
+            // if letter was made to be capital
+            if(65 <= letter && letter <= 90){
+                letter = normal_map[idx1][idx2];
+            }
+            else{
+                letter = shift_map[idx1][idx2];     // shift otherwise
+            }
+        }
+        // caps_lcok not pressed, proceed normally
+        else{
+            letter = shift_map[idx1][idx2];     // shift otherwise
+        }
     }
 
     // add letter to current buffer
