@@ -2,7 +2,11 @@
 
 #include "filesystem.h"
 
-/* As stated in Discussion Week 9, return -1 for write functions */
+
+/* int32_t file_write(int32_t fd, void* buf, int32_t nbytes) - should do nothing
+ * Inputs   : fd, buf, nbytes
+ * Outputs  : -1 since our file system is read-only (as stated in Discussion week 9)
+ */
 int32_t file_write(int32_t fd, void* buf, int32_t nbytes){
     return -1;      //do nothing, return -1
 }

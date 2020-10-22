@@ -48,7 +48,6 @@ typedef struct inode {
 /* the filesystem, needed?? */
 
 /* local functions - function params based on declarations in ece391syscall.h */
-void init_file_system(void);
 int32_t file_open(const uint8_t* filename);
 int32_t file_close(int32_t fd);
 int32_t file_read(int32_t fd, void* buf, int32_t nbytes);
@@ -57,3 +56,5 @@ int32_t dir_open(const uint8_t* filename);
 int32_t dir_close(int32_t fd);
 int32_t dir_read(int32_t fd, void* buf, int32_t nbytes);
 int32_t dir_write(int32_t fd, void* buf, int32_t nbytes);
+/* three helper functions */
+int32_t read_dentry_by_name(const uint8_t* fname, dentry_t* dentry);
