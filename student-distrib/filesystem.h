@@ -49,3 +49,6 @@ typedef struct inode {
 
 /* local functions */
 void init_file_system(void);
+int32_t file_write(void);
+int32_t dir_write(void);
+int32_t dir_close(void);
