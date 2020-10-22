@@ -84,6 +84,12 @@ void keyboard_handler(void){
         break;
     case CAPS_LOCK:
         caps_lock_pressed = !caps_lock_pressed;     // this is a toggle state per osdev
+        // if(caps_lock_pressed){
+        //     printf(" pressed ");
+        // }
+        // else{
+        //     printf(" released ");
+        // }
         break;
     case ENTER:
         keyboard_return();
@@ -122,7 +128,7 @@ void process_key(uint8_t scancode){
     idx2 = (scancode & 0x0F);           // grab low 4 bits to determine specific char
 
     if(idx1 > 3){
-        return;     // OOB
+        return;     // OOB since does not exist in my mappings
     }
 
     if(ctrl_pressed){
@@ -145,6 +151,9 @@ void process_key(uint8_t scancode){
 
         // reset state
         shift_pressed = 0;
+    }
+    else if(caps_lock_pressed){
+        letter = shift_map[idx1][idx2];
     }
     // normal case
     else{
