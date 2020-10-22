@@ -34,8 +34,8 @@ typedef struct dentry {
 /* boot block struct */
 typedef struct boot_block {
     uint32_t dir_entry_count;
-    uint32_t inode_count;
-    uint32_t data_block_count;
+    uint32_t inode_count;       // N
+    uint32_t data_block_count;  // D
     uint8_t data_reserved[BOOTBLOCK_B_RES];
     dentry_t direntries[NUM_DIRENTRIES];
 } boot_block_t;
@@ -45,7 +45,7 @@ typedef struct inode {
     uint32_t length;    // length in bytes
     uint32_t data_block_num[NUM_DATA_BLOCKS];      
 
-} index_node_t;
+} inode_t;
 
 /* the filesystem, needed?? */
 
