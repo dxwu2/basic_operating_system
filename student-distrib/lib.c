@@ -182,18 +182,19 @@ void putc(uint8_t c) {
 
         // if screen x is more than num of cols
         screen_x++;
-        if(screen_x >= NUM_COLS){
+        // screen_y = (screen_y + (screen_x / NUM_COLS)) % NUM_ROWS;
+    }
+
+    if(screen_x >= NUM_COLS){
             screen_x = 0;               // reset x coord
             screen_y++;                 // move down a row
         }
 
-        // also need to handle when y reaches end
-        if(screen_y >= NUM_ROWS){
-            vert_scroll();              // function for vert scroll -> shift all video memory up by one
-            screen_y = NUM_ROWS-1;      // we do not want to be directly at bottom, but one row up
-        }
-
-        // screen_y = (screen_y + (screen_x / NUM_COLS)) % NUM_ROWS;
+    // also need to handle when y reaches end
+    if(screen_y >= NUM_ROWS){
+        vert_scroll();              // function for vert scroll -> shift all video memory up by one
+        screen_y = NUM_ROWS-1;      // we do not want to be directly at bottom, but one row up
+        screen_x = 0;
     }
 
     // update cursor function ...
@@ -536,15 +537,15 @@ void vert_scroll(void) {
     int32_t i;      // for indexing
 
     // First: copy memory one row up from 0 to NUM_ROWS-1 (we want last one so stop there)
-    // just replace i with the x_offset location == NUM_ROWS+i
+    // just replace i with the x_offset location == NUM_COLS+i == width+i
     for (i = 0; i < (NUM_ROWS-1) * NUM_COLS; i++) {
-        *(uint8_t *)(video_mem + (i << 1)) = *(uint8_t *)(video_mem + ((NUM_ROWS + i) << 1));               // looks at next row's video memory
-        *(uint8_t *)(video_mem + (i << 1) + 1) = *(uint8_t *)(video_mem + ((NUM_ROWS + i) << 1) + 1);       // just looks at the next row's ATTRIB
+        *(uint8_t *)(video_mem + (i << 1)) = *(uint8_t *)(video_mem + ((NUM_COLS + i) << 1));               // looks at next row's video memory
+        *(uint8_t *)(video_mem + (i << 1) + 1) = *(uint8_t *)(video_mem + ((NUM_COLS + i) << 1) + 1);       // just looks at the next row's ATTRIB    
     }
 
     // clear last row - so start where we ended above
     // this is basically clear()
-    for (i = (NUM_COLS-1) * NUM_COLS; i < NUM_ROWS * NUM_COLS; i++) {
+    for (i = (NUM_ROWS-1) * NUM_COLS; i < NUM_ROWS * NUM_COLS; i++) {
         *(uint8_t *)(video_mem + (i << 1)) = ' ';
         *(uint8_t *)(video_mem + (i << 1) + 1) = ATTRIB;
     }
