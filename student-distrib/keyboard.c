@@ -142,17 +142,16 @@ void process_key(uint8_t scancode){
         return;     // do not do anything (yet)
     }
     else if(shift_pressed){
-        // if shift and caps_lock, lower case
-        if(caps_lock_pressed){
-            letter = normal_map[idx1][idx2];
-        }
-        // if no caps_lock, its a shift
-        else{
-            letter = shift_map[idx1][idx2];
-        }
+        letter = shift_map[idx1][idx2];     // default to shift
     }
     else if(caps_lock_pressed){
         letter = shift_map[idx1][idx2];
+
+        // if shift and caps_lock AND letter -> should be normal
+        // upper case goes from 65 to 90, so check if not a letter (i.e. a number)
+        if(!(65 <= letter && letter <= 90)){
+            letter = normal_map[idx1][idx2];
+        }
     }
     // normal case
     else{
