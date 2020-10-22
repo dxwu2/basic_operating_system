@@ -24,6 +24,7 @@
 #define ALT_RELEASE 0xB8
 #define ENTER 0x1C
 #define L 0x26
+#define BACKSPACE 0x0E
 
 // for the keyboard buffer
 char keyboard_buf[KEYBOARD_BUF_SIZE];     // need keyboard buffer -> size 128 char but last character is null '\0'

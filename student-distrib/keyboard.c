@@ -91,7 +91,10 @@ void keyboard_handler(void){
         keyboard_return();
         break;
     case BACKSPACE:
-        delete_from_buf();
+        if(buf_idx > 0){
+            delete_from_buf();
+            backspace();    // if we can delete a char from screen, call backspace (lib.c) to erase
+        }
         break;
     // otherwise normal
     default:
@@ -156,7 +159,7 @@ void process_key(uint8_t scancode){
     if(shift_pressed){
         // check if caps_lock_pressed -> if so reverse letter scheme
         if(caps_lock_pressed){
-            // if letter was made to be capital
+            // if letter was made to be capital -> upper case goes from 65 to 90
             if(65 <= letter && letter <= 90){
                 letter = normal_map[idx1][idx2];
             }
@@ -164,7 +167,7 @@ void process_key(uint8_t scancode){
                 letter = shift_map[idx1][idx2];     // shift otherwise
             }
         }
-        // caps_lcok not pressed, proceed normally
+        // caps_lock not pressed, proceed normally
         else{
             letter = shift_map[idx1][idx2];     // shift otherwise
         }
@@ -239,7 +242,7 @@ void clear_keyboard_buf(void){
  *   SIDE EFFECTS: clears keyboard buffer afterwards
  */ 
 void keyboard_return(void){
-    // code to send to terminal
+    // code to send to terminal ?
     putc('\n');
     clear_keyboard_buf();
 }
