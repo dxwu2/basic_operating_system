@@ -19,13 +19,16 @@
 
 
 /* data block struct */
+typedef struct datablock {
+    uint32_t data[NUM_DATA_BLOCKS];
+} datablock_t;
 
 /* directory entry struct (used in boot block struct) */
 typedef struct dentry {
     uint8_t filename[FILENAME_LEN];
     uint32_t filetype;
     uint32_t inode_num;
-    int8_t reserved[DENTRY_B_RES];
+    uint8_t reserved[DENTRY_B_RES];
 } dentry_t;
 
 /* boot block struct */
@@ -33,7 +36,7 @@ typedef struct boot_block {
     uint32_t dir_entry_count;
     uint32_t inode_count;
     uint32_t data_block_count;
-    int8_t data_reserved[BOOTBLOCK_B_RES];
+    uint8_t data_reserved[BOOTBLOCK_B_RES];
     dentry_t direntries[NUM_DIRENTRIES];
 } boot_block_t;
 
@@ -44,16 +47,20 @@ typedef struct inode {
 
 } index_node_t;
 
-
 /* the filesystem, needed?? */
 
+/* Helper functions - utilized by local functions below and system calls */
+uint32_t read_dentry_by_name (const uint8_t* fname, dentry_t* dentry);
+uint32_t read_dentry_by_index (uint32_t index, dentry_t* dentry);
+uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t length);
+
 /* local functions - function params based on declarations in ece391syscall.h */
-void init_file_system(void);
-int32_t file_open(const uint8_t* filename);
-int32_t file_close(int32_t fd);
-int32_t file_read(int32_t fd, void* buf, int32_t nbytes);
-int32_t file_write(int32_t fd, void* buf, int32_t nbytes);
-int32_t dir_open(const uint8_t* filename);
-int32_t dir_close(int32_t fd);
-int32_t dir_read(int32_t fd, void* buf, int32_t nbytes);
-int32_t dir_write(int32_t fd, void* buf, int32_t nbytes);
+uint32_t init_file_system(void);
+uint32_t file_open(const uint8_t* filename);
+uint32_t file_close(uint32_t fd);
+uint32_t file_read(uint32_t fd, void* buf, uint32_t nbytes);
+uint32_t file_write(uint32_t fd, void* buf, uint32_t nbytes);
+uint32_t dir_open(const uint8_t* filename);
+uint32_t dir_close(uint32_t fd);
+uint32_t dir_read(uint32_t fd, void* buf, uint32_t nbytes);
+uint32_t dir_write(uint32_t fd, void* buf, uint32_t nbytes);
