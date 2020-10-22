@@ -90,6 +90,9 @@ void keyboard_handler(void){
     case ENTER:
         keyboard_return();
         break;
+    case BACKSPACE:
+        delete_from_buf();
+        break;
     // otherwise normal
     default:
         process_key(scancode);
