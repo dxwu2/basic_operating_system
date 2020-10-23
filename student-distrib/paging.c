@@ -2,22 +2,12 @@
 
 #include "paging.h"
 
-/* void init_paging(void) - initializes the page directory and page table
+/* void init_paging(void) - initializes the page table and page directory
  * Inputs   : none
  * Outputs  : none
- * Side effects : maps video memory and the kernel
- * 
+ * Side Effects : maps video memory and kernel
  */
 void init_paging(void) {
-
-    /* bit 31 in CR0 needs to be set -> PG(page enable), paging is optional so must be enabled for use */
-    /* also reloads CR3 */
-    //enable_paging();
-    /* TLB needs to be flushed when CR3 reloaded */
-    //flush_tlb();
-    /* bit 4 in CR4 needs to be set -> PSE (page size extension) */
-    //enable_PSE();
-
 
     /* PAGE DIRECTORY INITIALIZATION */
     /* initialize same stuff first (change for vid memory and kernel later) */
@@ -47,22 +37,21 @@ void init_paging(void) {
 
         page_table[i].offset31_12 = 0;  // set to NULL initially
     }
-    /* map video memory to physical address - vid mem is at 0xB8000 and must only be ONE 4 kB page */
+
     page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].P = 1;
     page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].U = 0; // vid mem should be set to supervisor only since it is kernel mapping
     page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].C = 0; // vid mem contains memory mapped I/O and shouldn't be cached
-    // ADD THIS LINE FRICKKKKK
     page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].offset31_12 = 0xB8;
 
     /* first PDE should be for video memory */
     page_directory[0].P = 1;        // mark as present
-    //page_directory[0].D = 0;        // these pages contain memory mapped I/O and should not be cached
     page_directory[0].S = 0;        // pages are 4 kB ONLY for this first PDE (due to video memory)
     page_directory[0].offset31_12 = ((uint32_t) page_table >> ADDRESS_SHIFT_KB) & 0xFFF;    // set bits 31-12 to address of page table (right shifted)
+
     
     /* second PDE should be for kernel (at 4MB - 0x400000 for physical and virtual) */
-    //page_directory[1].offset31_12 = KERNEL_ADDRESS >> ADDRESS_SHIFT_KB;
-    page_directory[1].offset31_12 = KERNEL_ADDRESS >> ADDRESS_SHIFT_KB;
+    // page_directory[1].offset31_12 = KERNEL_ADDRESS >> ADDRESS_SHIFT_KB; 
+    page_directory[1].offset31_12 = 1024; 
     page_directory[1].P = 1;        // mark as present
     page_directory[1].U = 0;        // kernel stuff should be supervisor only
 
@@ -88,32 +77,7 @@ void init_paging(void) {
         : "r" (page_directory) 
         : "eax", "cc"
     );
-
-    
-
 }
-
-
-/* void enable_paging() - paging is optional, so we need enable it by setting bit-31 in CR0
- * Inputs   : none
- * Outputs  : none
- * Clobbers : memory, cc, EAX
- * side effects : this function also locates the page directory by placing its start address in CR3
- */
-/*
-void enable_paging(void) {
-    asm volatile(
-        "movl page_directory, %%eax\n"
-        "movl %%eax, %%cr3\n"
-        "movl %%cr0, %%eax\n"
-        "orl 0x80000001, %%eax\n"
-        "movl %%eax, %%cr0"
-        :
-        :
-        : "memory", "cc", "eax"
-    );
-}
-*/
 
 /* void flush_tlb() - TLB needs to be flushed when CR3 reloaded
  * Inputs : none
@@ -121,33 +85,13 @@ void enable_paging(void) {
  * Clobbers : memory (since we performed memory reads or writes to items other than those listed in the input and output operands)
  *          : cc (modified flag registers)
  */
-
 void flush_tlb(void) {
     asm volatile(
         "movl %%cr3, %%eax;"
         "movl %%eax, %%cr3;"
         :
         : 
-        : "eax", "cc"
+        : "eax"     // clobbered
     );
     return;
 }
-
-/* void enable_PSE()
- * Inputs  : none
- * Outputs : none
- * Clobbers: EAX,cc, mem
- * side effects : enables PSE (4 MiB pages) by setting bit 4 in CR4
- */
-/*
-void enable_PSE(void) {
-    asm volatile(
-        "movl %%cr4, %%eax\n"
-        "orl 0x00000010, %%eax\n"
-        "movl %%eax, %%cr4"
-        :
-        :
-        : "memory", "cc", "eax"
-    );
-}
-*/

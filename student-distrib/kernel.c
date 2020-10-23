@@ -8,8 +8,10 @@
 #include "i8259.h"
 #include "debug.h"
 #include "tests.h"
+#include "keyboard.h"
 #include "paging.h"
-
+#include "rtc.h"
+#include "filesystem.h"
 #define RUN_TESTS
 
 /* Macros. */
@@ -53,6 +55,8 @@ void entry(unsigned long magic, unsigned long addr) {
         int mod_count = 0;
         int i;
         module_t* mod = (module_t*)mbi->mods_addr;
+        /*Initialize filesystem using boot block referenced by mod*/
+        init_file_system(mod->mod_start, mod->mod_end);
         while (mod_count < mbi->mods_count) {
             printf("Module %d loaded at address: 0x%#x\n", mod_count, (unsigned int)mod->mod_start);
             printf("Module %d ends at address: 0x%#x\n", mod_count, (unsigned int)mod->mod_end);
@@ -142,16 +146,18 @@ void entry(unsigned long magic, unsigned long addr) {
 
     /* Initialize devices, memory, filesystem, enable device interrupts on the
      * PIC, any other initialization stuff... */
+    rtc_init();
+
+    keyboard_init();
 
     init_paging();
-
-    clear();
 
     /* Enable interrupts */
     /* Do not enable the following until after you have set up your
      * IDT correctly otherwise QEMU will triple fault and simple close
      * without showing you any output */
-    //printf("Enabling Interrupts\n");
+    // clear();
+    printf("Enabling Interrupts\n");
     sti();
 
 #ifdef RUN_TESTS
