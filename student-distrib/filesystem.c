@@ -3,8 +3,6 @@
 #include "filesystem.h"
 #include "lib.h"
 
-/* local static for boot block */
-static boot_block_t* the_boot_block = NULL;
 
 /* File system initialization
  * Only one module loaded in c, so it must be filesystem
@@ -30,7 +28,7 @@ uint32_t init_file_system(uint32_t fs_start, uint32_t fs_end){
 }
 
 uint32_t file_open(const uint8_t* filename) {
-
+    return 0;
 }
 
 /* Helper functions defined */
@@ -84,13 +82,18 @@ uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t leng
     int len = (int) length;
 
     /* retrieve inode */
-    inode_t* i = the_boot_block + BLOCK_SIZE * (inode + 1);     // + 1 because of the boot block
-    inode_t* next = the_boot_block + BLOCK_SIZE * (inode + 2);  // for endpoint
+    unsigned char* i = the_boot_block + BLOCK_SIZE * (inode + 1);     // + 1 because of the boot block
+    unsigned char* next = the_boot_block + BLOCK_SIZE * (inode + 2);  // for endpoint
 
     /* apply offset */
-    if (offset > i->length) {
+    /*
+    if (offset > (inode_t*)i->length) {
         return 0;
     }
+    */
+   if (offset > len) {
+       return 0;
+   }
     // if end of file will be reached
     if (i + offset + length >= next) {
         memcpy(i + offset, buf, next - (i + offset));
@@ -113,9 +116,11 @@ uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t leng
   * Inputs  : filename
   * Outputs : returns 0
   */
+ /*
 uint32_t file_open(const int8_t* filename){
     return 0;
 }
+*/
 
 uint32_t file_close(uint32_t fd){
     return 0;

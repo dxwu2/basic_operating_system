@@ -1,11 +1,7 @@
 #include "tests.h"
 #include "x86_desc.h"
 #include "lib.h"
-<<<<<<< HEAD
-#include "paging.h"
-=======
 #include "filesystem.h"
->>>>>>> bd52ebd2ffedd9ccce9438fa51f3c45549be0f5c
 
 #define PASS 1
 #define FAIL 0
@@ -161,6 +157,18 @@ int fs_test_2(){
 		return FAIL;
 	else
 		return PASS;
+	
+}
+
+void fs_test_list_files(){
+	TEST_HEADER;
+
+	dentry_t* cur_dentry;
+	int i;
+	for (i = 0; i < the_boot_block->dir_entry_count; i++) {
+		dir_read(0, cur_dentry, 64);
+		printf("file_name:			%s, file_type: %d, file_size: %d", cur_dentry->filename, cur_dentry->filetype, 0);
+	}
 	
 }
 
