@@ -33,8 +33,8 @@ int32_t terminal_read(int32_t fd, void* buf, int32_t nbytes){
     // wait until '\n' is pressed
     while(!flag);
 
-    // bytes should be the length of the keyboard_buf - can be 128 at most (set by keyboard.c)
-    bytes = strlen(keyboard_buf);
+    // bytes should be the minimum between keyboard buffer length and nbytes to read
+    bytes = (strlen(keyboard_buf) < nbytes) ? strlen(keyboard_buf) : nbytes;
 
     // use memcpy from lib.c to copy from keyboard_buf to buf
     memcpy(buf, keyboard_buf, bytes);
