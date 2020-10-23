@@ -1,38 +1,69 @@
 /* filesystem.c - sets up filesystem, includes some other functions regarding fs */
 
 #include "filesystem.h"
+#include "lib.h"
 
 /* local static for boot block */
-static boot_block_t the_boot_block;
+static boot_block_t* the_boot_block = NULL;
 
-/* File system initialization */
-uint32_t init_file_system(){
-    the_boot_block.dir_entry_count = 0;
+/* File system initialization
+ * Only one module loaded in c, so it must be filesystem
+ * Call init_file_system() from kernel.c using mod captured from multiboot info mbi
+ */
+uint32_t init_file_system(uint32_t fs_start, uint32_t fs_end){
+    boot_block_t* potential_boot_block = (boot_block_t*) fs_start;     //fs_start is start addr of file system (boot block)
 
-}
+    /* Verify structure of fs using fs_start, fs_end, and absolute block count
+     * (just checking to make sure we are actually reading valid data structure and not some random bits)
+     * Count of absolute blocks = 1 (the boot block) + number of index nodes + number of data blocks */
+    uint32_t abs_block_count = 1 + potential_boot_block->inode_count + potential_boot_block->data_block_count;
 
-/* Helper functions defined */
-uint32_t read_dentry_by_name (const uint8_t* fname, dentry_t* dentry){
-    /* Check inputs to ensure validity */
-    if((!fname) || (!dentry)){
+    /* Multiply by 4kB per block and compare against fs_end*/
+    uint32_t fs_size = 4096 * abs_block_count;
+    if (fs_start + fs_size != fs_end)
         return -1;
-    }
-    /* scan through dentries in boot block to find fname */
-    /* Call read_dentry_by_index */
+    /* Maybe more checks?? */
+
+    else
+        the_boot_block = potential_boot_block;      //officially set local boot block to fs_start
     return 0;
 }
 
-uint32_t read_dentry_by_index (uint32_t index, dentry_t* dentry){
-    /* Check inputs for validity */
-    if((index > the_boot_block.dir_entry_count) || (!dentry)){
+/* Helper functions defined */
+uint32_t read_dentry_by_name (const int8_t* fname, dentry_t* dentry){
+    unsigned i;     //for loop below
+    /* Check if filesystem initialized */
+    if(!the_boot_block)
         return -1;
+    /* Check inputs for validity */
+    if((!fname) || (!dentry) || (strlen(fname) > FILENAME_LEN))
+        return -1;
+    /* scan through dentries in boot block to find fname */
+    int8_t fname_len = strlen(fname);
+    for(i = 0; i < NUM_DIRENTRIES; i++){
+        dentry_t* potential_dentry = &(the_boot_block->direntries[i]);
+        if(!strncmp(fname, potential_dentry->filename, fname_len)){
+            *dentry = *potential_dentry;
+            return 0;
+        }
     }
-    /* populate dentry parameter -> file name, file type, inode number */
-    
+    return -1;      //We could not find dentry with desired filename
+}
+
+uint32_t read_dentry_by_index (uint32_t index, dentry_t* dentry){
+    /* Check if filesystem initialized */
+    if(!the_boot_block)
+        return -1;
+    /* Check inputs for validity (0 <= index < number of dentries)*/
+    if((index < 0) || (index >= the_boot_block->dir_entry_count) || (!dentry))
+        return -1;
+    /* Set dentry based on index otherwise */
+    *dentry = the_boot_block->direntries[index];
     return 0;
 }
 
 uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t length){
+    //return -1 in event of inode outside valid range or if bad data block number in inode
     return 0;
 }
 
@@ -41,7 +72,7 @@ uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t leng
  * Define file operation functions separate from directory operations 
  * As stated in Discussion Week 9, return -1 for any write functions 
  */
-uint32_t file_open(const uint8_t* filename){
+uint32_t file_open(const int8_t* filename){
     return 0;
 }
 
@@ -60,7 +91,7 @@ uint32_t file_write(uint32_t fd, void* buf, uint32_t nbytes){
 
 
 /* Separate functions for directory operations */
-uint32_t dir_open(const uint8_t* filename){
+uint32_t dir_open(const int8_t* filename){
     /* use read_dentry_by_name */
     return 0;
 }
