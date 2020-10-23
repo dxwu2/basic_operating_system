@@ -167,24 +167,44 @@ void terminal_test2(){
 	printf(" (%d)", cnt);									// prints number of bytes written, should not stop at nulll byte!
 }
 
-/* Tests if terminal_read handles buffer overlow and size sent by user is <128
+
+/* Tests if terminal_read handles case where size sent by user does not match size of buffer
  *
  * Inputs	: None
  * Outputs	: None
- * Side Effects	:
+ * Side Effects	: Should only read at most 2 characters, and print 2 characters
  */
 void terminal_test3(){
 	int i;
 	int32_t cnt;
-	char* buf[KEYBOARD_BUF_SIZE];		// more than 127
+	char* buf[KEYBOARD_BUF_SIZE];
 
-	cnt = terminal_read(1, buf, KEYBOARD_BUF_SIZE);
+	cnt = terminal_read(1, buf, 2);		// 2 is definitely less than average word length		
 	printf("terminal_read result: ");
 	for(i = 0; i < cnt; i++){
 		putc(((char*)buf)[i]);
 	}
 
 }
+
+
+/* Tests terminal_open/close
+ *
+ * Inputs	: None
+ * Outputs	: None
+ * Side Effects	: Should print PASS (both open and close return 0, so see if it matches)
+ */
+void terminal_test4(){
+	int32_t open;
+	int32_t close;
+	const uint8_t* filename;		// points to null
+
+	open = terminal_open(filename) == 0 ? PASS : FAIL;
+	close = terminal_close(1) == 0 ? PASS : FAIL;
+	TEST_OUTPUT("terminal_open", open);
+	TEST_OUTPUT("terminal_close", close);
+}
+
 
 /* Checkpoint 3 tests */
 /* Checkpoint 4 tests */
@@ -202,4 +222,5 @@ void launch_tests(){
 	terminal_test1();
 	// terminal_test2();
 	// terminal_test3();
+	// terminal_test4();
 }
