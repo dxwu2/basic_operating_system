@@ -5,7 +5,6 @@
 
 #define PASS 1
 #define FAIL 0
-#define BUFSIZE 128		// for testing terminal_read/write
 
 /* format these macros as you see fit */
 #define TEST_HEADER 	\
@@ -130,63 +129,32 @@ void null_test(){
  * 
  * Inputs	: None
  * Outputs	: None
- * Side Effects	: Echos whatever was typed
+ * Side Effects	: Echos whatever was typed, still retains terminal buffer when clearing screen (CTRL+l/L)
  */
 void terminal_test1(){
 	int32_t cnt;
-	char* buf;
-	char* echo;
-	char* terminal;
+	char buf[KEYBOARD_BUF_SIZE];
 
 	while(1){
-		terminal = "391OS> ";
-		echo = "You said: ";
-		terminal_write(1, terminal, 7);
-
-		while(keyboard_buf[strlen(keyboard_buf)-1] != '\n');
-
-		if(keyboard_buf[0] == '\n'){
-			clear_keyboard_buf();
-			continue;
-		}
 		cnt = terminal_read(1, buf, KEYBOARD_BUF_SIZE);
-		
-		terminal_write(1, echo, 10);
+		// printf("(%d)\n", cnt);
 		terminal_write(1, buf, cnt);
 	}
 }
 
-/* Tests if CTRL+l/L clears screen and resets keyboard buffer, but not the read buffer
- *
+
+/* Testing to see if terminal_write does not stop writing at a null byte
  * Inputs	: None
  * Outputs	: None
- * Side Effects	: For abcde(CTRL+L)fghijk('\n), read buffer should be abcdefghijk 
+ * Side Effects	: Prints the number of bytes written at end (should be KEYBOARD_BUF_SIZE=128)
+ * 					Also does not print null bytes
  */
 void terminal_test2(){
 	int i;
 	int32_t cnt;
 	char* buf[KEYBOARD_BUF_SIZE];
-	cnt = terminal_read(1, buf, KEYBOARD_BUF_SIZE);
 
-	for(i = 0; i < cnt; i++){
-		putc(((char*)buf)[i]);
-	}
-
-	printf("\n");
-	terminal_write(1, buf, cnt);
-}
-
-/* Testing to see if terminal_write does not stop writing at a null byte
- * Inputs	: None
- * Outputs	: None
- * Side Effects	: If done correctly, should have a bunch of null bytes written after terminal_write call
- */
-void terminal_test3(){
-	int i;
-	int32_t cnt;
-	char* buf[BUFSIZE];
-
-	printf("Original buffer: ");
+	printf("Original characters: ");
 	// for loop will only go up to 15 characters, meaning rest are null bytes
 	for(i = 0; i < 15; i++){
 		((char*)buf)[i] = i + 65;		// 65 for start of capital letters
@@ -196,7 +164,26 @@ void terminal_test3(){
 	// new line to compare
 	printf("\nTesting terminal_write: ");
 	cnt = terminal_write(1, buf, KEYBOARD_BUF_SIZE);
-	printf("%d", cnt);									// prints number of bytes written, should not stop at nulll byte!
+	printf(" (%d)", cnt);									// prints number of bytes written, should not stop at nulll byte!
+}
+
+/* Tests if terminal_read handles buffer overlow and size sent by user is <128
+ *
+ * Inputs	: None
+ * Outputs	: None
+ * Side Effects	:
+ */
+void terminal_test3(){
+	int i;
+	int32_t cnt;
+	char* buf[KEYBOARD_BUF_SIZE];		// more than 127
+
+	cnt = terminal_read(1, buf, KEYBOARD_BUF_SIZE);
+	printf("terminal_read result: ");
+	for(i = 0; i < cnt; i++){
+		putc(((char*)buf)[i]);
+	}
+
 }
 
 /* Checkpoint 3 tests */
@@ -212,7 +199,7 @@ void terminal_test3(){
 /* Test suite entry point */
 void launch_tests(){
 	// launch your tests here
-	// terminal_test1();
-	terminal_test2();
+	terminal_test1();
+	// terminal_test2();
 	// terminal_test3();
 }

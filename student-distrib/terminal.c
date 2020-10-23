@@ -28,29 +28,20 @@ int32_t terminal_close(int32_t fd){
  * Return Value: int32_t (number of bytes written on success, -1 on failure?)
  * Function: Reads from keyboard buffer to buf until a newline '\n' */
 int32_t terminal_read(int32_t fd, void* buf, int32_t nbytes){
-    int i;      // for looping, start at 0
+    int bytes;
 
-    // wait until key is actually pressed
+    // wait until '\n' is pressed
     while(!flag);
 
-    // read should only return when enter key is pressed and always add newline character at end of buffer before returning
-    while(keyboard_buf[strlen(keyboard_buf)-1] != '\n');
-
-    // printf("reached end!\n");
-
-    for(i = 0; (i < nbytes) && (i < KEYBOARD_BUF_SIZE); i++){
-        ((char*)buf)[i] = keyboard_buf[i];
-        if(keyboard_buf[i] == '\n'){
-            break;
-        }
-    }
+    // bytes should be the length of the keyboard_buf - can be 128 at most (set by keyboard.c)
+    bytes = strlen(keyboard_buf);
 
     // use memcpy from lib.c to copy from keyboard_buf to buf
-    // i+1 because we need to look at '\n'
-    // memcpy(buf, &(keyboard_buf), nbytes);
+    memcpy(buf, keyboard_buf, bytes);
 
-    clear_keyboard_buf();       // need to clear the buffer at the end, also reset flag
-    return i;                 // return size of buffer
+    clear_keyboard_buf();       // need to clear the buffer at the end
+    flag = 0;                   // reset flag to prevent reading
+    return bytes;               // return size of buffer
 }
 
 
@@ -69,7 +60,9 @@ int32_t terminal_write(int32_t fd, const void* buf, int32_t nbytes){
 
     for(i = 0; i < nbytes; i++){
         char letter = ((char*)buf)[i];      // converting void pointer to char pointer -> need to index by array (ea char = 1 byte)
-        putc(letter);
+        if(letter != '\0'){
+            putc(letter);
+        }
     }
 
     return nbytes;

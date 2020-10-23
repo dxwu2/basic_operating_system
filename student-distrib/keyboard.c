@@ -174,8 +174,8 @@ void process_key(uint8_t scancode){
         }
     }
 
-    // tell terminal driver that a key was pressed
-    flag = 1;
+    // // tell terminal driver that a key was pressed
+    // flag = 1;
     
     // add letter to current buffer
     add_to_buf(letter);
@@ -192,7 +192,8 @@ void process_key(uint8_t scancode){
  *   SIDE EFFECTS: does not add anymore letters if buffer is full, increments buf_idx when adding
  */   
 void add_to_buf(char letter){
-    if(buf_idx < KEYBOARD_BUF_SIZE){
+    // we reserve index 127 (keyboard_buf_size-1) for new line
+    if(buf_idx < KEYBOARD_BUF_SIZE-1){
         keyboard_buf[buf_idx] = letter;
         buf_idx++;
     }
@@ -228,14 +229,13 @@ void delete_from_buf(void){
  */ 
 void clear_keyboard_buf(void){
     // clear all characters to be null
-    while(buf_idx >= 0){
-        keyboard_buf[buf_idx] = '\0';
-        buf_idx--;
+    int i;
+    for(i = 0; i < KEYBOARD_BUF_SIZE; i++){
+        keyboard_buf[i] = '\0';
     }
 
     // reset index and flag to 0
     buf_idx = 0;
-    flag = 0;
 }
 
 /*
@@ -247,8 +247,11 @@ void clear_keyboard_buf(void){
  *   SIDE EFFECTS: clears keyboard buffer afterwards
  */ 
 void keyboard_return(void){
-    keyboard_buf[buf_idx] = '\n';       // insert into buffer
-    buf_idx++;
     putc('\n');
-    // clear_keyboard_buf();
+    keyboard_buf[buf_idx] = '\n';       // insert into buffer
+
+    buf_idx++;
+    
+    // tell terminal driver that a key was pressed
+    flag = 1;
 }
