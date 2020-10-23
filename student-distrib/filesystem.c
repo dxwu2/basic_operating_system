@@ -29,6 +29,10 @@ uint32_t init_file_system(uint32_t fs_start, uint32_t fs_end){
     return 0;
 }
 
+uint32_t file_open(const uint8_t* filename) {
+
+}
+
 /* Helper functions defined */
 uint32_t read_dentry_by_name (const int8_t* fname, dentry_t* dentry){
     unsigned i;     //for loop below
@@ -62,8 +66,22 @@ uint32_t read_dentry_by_index (uint32_t index, dentry_t* dentry){
     return 0;
 }
 
+/* read_data - reads up to "length" bytes starting from "offset" position in the file with inode number "inode"
+ * Inputs   : inode - indicates which file
+ *          : offset - tells us where to start reading in the file
+ *          : buf - read info placed in here
+ *          : length - tell us how many bytes to read
+ * Outputs  : returns the number of bytes read, or 0 if end of file reached, or -1 on failure
+ * Side effects : bytes read are placed in the buffer
+ */
 uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t length){
     //return -1 in event of inode outside valid range or if bad data block number in inode
+    /* check if inode number is invalid */
+    if (inode > (the_boot_block.N) - 1) {
+        return -1;
+    }
+
+
     return 0;
 }
 
@@ -72,6 +90,10 @@ uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t leng
  * Define file operation functions separate from directory operations 
  * As stated in Discussion Week 9, return -1 for any write functions 
  */
+ /* uint32_t file_open(const uint8_t* filename) - initializes any temporary structures
+  * Inputs  : filename
+  * Outputs : returns 0
+  */
 uint32_t file_open(const int8_t* filename){
     return 0;
 }
