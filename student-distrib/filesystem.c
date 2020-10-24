@@ -149,14 +149,13 @@ uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t leng
   * Side Effects    : change global inode number to the one associated with this file (used in file_read)
   */
 uint32_t file_open(const uint8_t* filename) {
-    dentry_t* cur_dentry;
+    uint32_t* cur_dentry;
     int i;
     for (i = 1; i <= NUM_DIRENTRIES; i++) {
         cur_dentry = the_boot_block + sizeof(dentry_t) * i;
-        // ********* debug this line below ************
-        if (filename == cur_dentry->filename) {
+        if (strncmp(filename, ((dentry_t*)cur_dentry)->filename, FILENAME_LEN)) {
             // set global inode number to one associated w/ this file
-            global_inode_index = cur_dentry->inode_num;
+            global_inode_index = ((dentry_t*)cur_dentry)->inode_num;
             return 0;
         }
     }
