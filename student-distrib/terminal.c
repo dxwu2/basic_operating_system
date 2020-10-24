@@ -60,7 +60,7 @@ int32_t terminal_write(int32_t fd, const void* buf, int32_t nbytes){
 
     for(i = 0; i < nbytes; i++){
         char letter = ((char*)buf)[i];      // converting void pointer to char pointer -> need to index by array (ea char = 1 byte)
-        if(letter != '\0'){
+        if(letter != '\0'){                 // do not print null bytes to screen
             putc(letter);
         }
     }

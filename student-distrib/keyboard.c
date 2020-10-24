@@ -34,7 +34,8 @@ void keyboard_init(void){
     // enable IRQ1 on master PIC
     enable_irq(KEYBOARD_IRQ_LINE);
 
-    buf_idx = 0;                    // have buf_idx start at beginning
+    // have buf_idx start at beginning
+    buf_idx = 0;
 }
 
 
@@ -53,7 +54,7 @@ void keyboard_handler(void){
     //  -> figure out what key was pressed and process it (print to screen)
 
     uint8_t scancode;
-    scancode = inb(KEYBOARD_PORT);
+    scancode = inb(KEYBOARD_PORT);      // read scancode from keyboard port
 
     // OOB check
     if(scancode > 0xD8){
@@ -132,16 +133,16 @@ void process_key(uint8_t scancode){
     idx2 = (scancode & 0x0F);           // grab low 4 bits to determine specific char
 
     if(idx1 > 3){
-        return;     // OOB since does not exist in my mappings
+        return;     // OOB since does not exist in my mappings (0 <= idx1 <= 3)
     }
 
     // grab letter as normal - if no coniditons are met we keep normal mapping
     letter = normal_map[idx1][idx2];
 
     if(ctrl_pressed){
-        // clear screen if CTRL+L
+        // clear screen if CTRL+L or CTRL+l
         if(scancode == L){
-            clear();                    // clear screen
+            clear();                    // clear screen from lib.c
         }
         return;
     }
@@ -173,9 +174,6 @@ void process_key(uint8_t scancode){
             letter = shift_map[idx1][idx2];     // shift otherwise
         }
     }
-
-    // // tell terminal driver that a key was pressed
-    // flag = 1;
     
     // add letter to current buffer
     add_to_buf(letter);
@@ -247,11 +245,11 @@ void clear_keyboard_buf(void){
  *   SIDE EFFECTS: clears keyboard buffer afterwards
  */ 
 void keyboard_return(void){
-    putc('\n');
+    putc('\n');                         // print new line
     keyboard_buf[buf_idx] = '\n';       // insert into buffer
 
-    buf_idx++;
+    buf_idx++;      // not necessary but kept for debugging -> gets reset anyway
     
-    // tell terminal driver that a key was pressed
+    // tell terminal driver that '\n' was pressed
     flag = 1;
 }
