@@ -54,6 +54,8 @@ typedef struct inode {
 
 /* local static for boot block */
 static boot_block_t* the_boot_block = NULL;
+static int global_inode_index;     // used for file_read
+static int global_file_index;      // used for dir_read
 
 /* Helper functions - utilized by local functions below and system calls */
 uint32_t read_dentry_by_name (const int8_t* fname, dentry_t* dentry);
