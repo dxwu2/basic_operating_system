@@ -81,7 +81,8 @@ uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t leng
     }
 
     /* retrieve inode */
-    uint32_t* i = (uint32_t*)the_boot_block + BLOCK_SIZE * (inode + 1);     // + 1 because of the boot block
+    uint32_t* i = (uint32_t*)((uint32_t)the_boot_block + BLOCK_SIZE * (inode + 1));
+    //uint32_t* i = (uint32_t*)the_boot_block + BLOCK_SIZE * (inode + 1);     // + 1 because of the boot block
     //uint32_t* next = the_boot_block + BLOCK_SIZE * (inode + 2);  // for endpoint
 
     /* if offset is greater than length of inode(first element of i is its length), then reached end of file */
@@ -93,21 +94,32 @@ uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t leng
     uint32_t* start_datablocks = (uint32_t*)((uint32_t)the_boot_block + BLOCK_SIZE * (the_boot_block->inode_count + 1));
     /* next, get us index of 0th data block # (index) */
     int num_data_block = 0;     // # of data block we are on in the inode
-    uint32_t* cur_datablock_index_addr = (uint32_t*)((inode_t*) i)->data_block_num[num_data_block]; // addr
+    //uint32_t* cur_datablock_index_addr = (uint32_t*)((inode_t*) i)->data_block_num[num_data_block]; // addr
+    uint32_t* cur_datablock_index_addr = i + 1;     // add 1 (uint32_t, so 1 = 4B) to get us address at 0th data block number (in inode)
     // apply offset
     cur_datablock_index_addr += (offset/BLOCK_SIZE) * 4;       // each data block index is 4B (diagram), division is floored in C
     uint32_t cur_datablock_index = *cur_datablock_index_addr;
     num_data_block = (offset/BLOCK_SIZE);
     // get the actual data block's addr
-    uint32_t* cur_datablock = start_datablocks + cur_datablock_index * BLOCK_SIZE;
+    uint32_t* cur_datablock = start_datablocks + cur_datablock_index * BLOCK_SIZE/sizeof(uint32_t);
 
     /* setup for looping */
     uint32_t position_in_file = offset % BLOCK_SIZE;
 
     /* loop through data and read to buffer */
     uint32_t bytes_read;
-    for (bytes_read = 0; bytes_read < length; bytes_read++) {
-        buf[bytes_read] = *(cur_datablock + position_in_file);
+    for (bytes_read = 0; bytes_read < length; bytes_read += 4) {
+        uint32_t test1 = cur_datablock + position_in_file;
+        uint32_t* test2 = *(cur_datablock + position_in_file);
+        // each value in buffer is only 1B, but we read 4B at a time:
+        uint32_t test01 = (*(cur_datablock + position_in_file)) >> 24;
+        uint32_t test02 = ((*(cur_datablock + position_in_file)) >> 16) & 0xFF;
+        uint32_t test03 = ((*(cur_datablock + position_in_file)) >> 8) & 0xFF;
+        uint32_t test04 = ((*(cur_datablock + position_in_file))) & 0xFF;
+        buf[bytes_read] = ((*(cur_datablock + position_in_file)) >> 24) & 0xFF;
+        buf[bytes_read + 1] = ((*(cur_datablock + position_in_file)) >> 16) & 0xFF;
+        buf[bytes_read + 2] = ((*(cur_datablock + position_in_file)) >> 8) & 0xFF;
+        buf[bytes_read + 3] = (*(cur_datablock + position_in_file)) & 0xFF;
 
         position_in_file++;
         /* if we reach end of current data block */
@@ -151,9 +163,10 @@ uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t leng
 uint32_t file_open(const uint8_t* filename) {
     uint32_t* cur_dentry;
     int i;
+    /* loop through dentries to find the one with matching filename */
     for (i = 1; i <= NUM_DIRENTRIES; i++) {
-        cur_dentry = the_boot_block + sizeof(dentry_t) * i;
-        if (strncmp(filename, ((dentry_t*)cur_dentry)->filename, FILENAME_LEN)) {
+        cur_dentry = ((uint32_t*)the_boot_block + (sizeof(dentry_t)/sizeof(uint32_t)) * i);
+        if (strncmp((int8_t*)filename, ((dentry_t*)cur_dentry)->filename, FILENAME_LEN) == 0) {
             // set global inode number to one associated w/ this file
             global_inode_index = ((dentry_t*)cur_dentry)->inode_num;
             return 0;

@@ -160,6 +160,13 @@ int fs_test_2(){
 	
 }
 
+/* fs_test_list_files - Tests dir_read (and therefore, read_dentry_by_name) by printing out all the files
+ * 
+ * Inputs	: None
+ * Outputs	: None
+ * Coverage	: dir_read and read_dentry_by_name
+ * Side Effects	: lists out all files (check discord general chat for what it should look like)
+ */
 void fs_test_list_files(){
 	TEST_HEADER;
 
@@ -170,6 +177,30 @@ void fs_test_list_files(){
 		printf("file_name:			%s, file_type: %d, file_size: %d", cur_dentry->filename, cur_dentry->filetype, 0);
 	}
 	
+}
+
+/* fs_test_read_file - Tests file_read (and thus, read_data) by printing out contents of a file
+ * 
+ * Inputs	: None
+ * Outputs	: None
+ * Coverage	: file_read and read_data
+ * Side Effects	: prints out the contents of the specified file
+ */
+void fs_test_read_file(){
+	TEST_HEADER;
+
+	uint32_t fd;	// unused
+	char buffer[1600];	// more than enough
+	file_open("frame0.txt");
+	file_read(&fd, &buffer, 1600);
+	int i;
+	for (i = 0; i < 96; i++) {
+		printf("%c", buffer[i]);
+		if (i % 24 == 23) {
+			printf("\n");
+		}
+	}
+	printf("file_name: frame0.txt");
 }
 
 /* Checkpoint 3 tests */
@@ -191,5 +222,6 @@ void launch_tests(){
 	// paging_test1();
 	// null_test();
 	// TEST_OUTPUT("fs_test_1", fs_test_1());
-	TEST_OUTPUT("fs_test_2", fs_test_2());
+	// TEST_OUTPUT("fs_test_2", fs_test_2());
+	fs_test_read_file();
 }
