@@ -194,13 +194,18 @@ void fs_test_read_file(){
 	file_open("frame0.txt");
 	file_read(&fd, &buffer, 1600);
 	int i;
-	for (i = 0; i < 96; i++) {
+	for (i = 0; i < 24 * 12; i++) {
+		if (i == 120) {
+			int a = 0;
+		}
 		printf("%c", buffer[i]);
+		/*
 		if (i % 24 == 23) {
 			printf("\n");
 		}
+		*/
 	}
-	printf("file_name: frame0.txt");
+	printf("\nfile_name: frame0.txt");
 }
 
 /* Checkpoint 3 tests */

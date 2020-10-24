@@ -17,3 +17,7 @@ Error 1: was dereferencing an address twice
 Error 2: when adding with uint_32t, adding 1 is equivalent to adding 4B, NOT 1B (be aware of struct size) -> this literally shows up everywhere
 Error 3: buffer passed in is of int8_t. In read_data, writing 32 bits each time.
 Error 4: if statement default is positive number, NOT 0. (e.g. if (var) evaluates to true if var > 0)
+
+Bug: printing out right characters, but a jumbled mess
+Reason: forgot that data is stored in little endian (little end first)
+Error: also don't need to manually enter new line, this is included in the files

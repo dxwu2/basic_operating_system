@@ -116,10 +116,14 @@ uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t leng
         uint32_t test02 = ((*(cur_datablock + position_in_file)) >> 16) & 0xFF;
         uint32_t test03 = ((*(cur_datablock + position_in_file)) >> 8) & 0xFF;
         uint32_t test04 = ((*(cur_datablock + position_in_file))) & 0xFF;
-        buf[bytes_read] = ((*(cur_datablock + position_in_file)) >> 24) & 0xFF;
-        buf[bytes_read + 1] = ((*(cur_datablock + position_in_file)) >> 16) & 0xFF;
-        buf[bytes_read + 2] = ((*(cur_datablock + position_in_file)) >> 8) & 0xFF;
-        buf[bytes_read + 3] = (*(cur_datablock + position_in_file)) & 0xFF;
+        buf[bytes_read] = test04;
+        buf[bytes_read + 1] = test03;
+        buf[bytes_read + 2] = test02;
+        buf[bytes_read + 3] = test01;
+        //buf[bytes_read] = ((*(cur_datablock + position_in_file)) >> 24) & 0xFF;
+        //buf[bytes_read + 1] = ((*(cur_datablock + position_in_file)) >> 16) & 0xFF;
+        //buf[bytes_read + 2] = ((*(cur_datablock + position_in_file)) >> 8) & 0xFF;
+        //buf[bytes_read + 3] = (*(cur_datablock + position_in_file)) & 0xFF;
 
         position_in_file++;
         /* if we reach end of current data block */
