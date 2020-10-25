@@ -93,11 +93,14 @@ void system_call_test(){
  * Outputs	:	None
  * Side Effects	:	Freeze the kernel
  */
-/*
+
 void paging_test(){
 	TEST_HEADER;
 
-	int * ptr = (*int) (0xB8000);
+	int * ptr = (int*) (0xB8000);
+	int a;
+	a = *(ptr);
+}
 
 
 /* Tests if Page Fault Exception fired on dereferencing null ptr
@@ -191,19 +194,11 @@ void fs_test_read_file(){
 
 	uint32_t fd;	// unused
 	char buffer[1600];	// more than enough
-	file_open("frame0.txt");
-	file_read(&fd, &buffer, 1600);
+	file_open((uint8_t*)"frame0.txt");
+	file_read((uint32_t)&fd, &buffer, 1600);
 	int i;
-	for (i = 0; i < 24 * 12; i++) {
-		if (i == 120) {
-			int a = 0;
-		}
+	for (i = 0; i < 1600; i++) {
 		printf("%c", buffer[i]);
-		/*
-		if (i % 24 == 23) {
-			printf("\n");
-		}
-		*/
 	}
 	printf("\nfile_name: frame0.txt");
 }
