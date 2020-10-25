@@ -28,6 +28,11 @@ uint32_t init_file_system(uint32_t fs_start, uint32_t fs_end){
 }
 
 /* Helper functions defined */
+/* read_dentry_by_name - fills a dentry block with the file name, file type, and inode number for the file
+ * Inputs   : fname - filename
+ *          : dentry - ptr to the dentry block we want to fill
+ * Outputs  : returns 0 on success, -1 on failure (non-existent file or invalid index)
+ */ 
 uint32_t read_dentry_by_name (const int8_t* fname, dentry_t* dentry){
     unsigned i;     //for loop below
     /* Check if filesystem initialized */
@@ -82,8 +87,6 @@ uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t leng
 
     /* retrieve inode */
     uint32_t* i = (uint32_t*)((uint32_t)the_boot_block + BLOCK_SIZE * (inode + 1));
-    //uint32_t* i = (uint32_t*)the_boot_block + BLOCK_SIZE * (inode + 1);     // + 1 because of the boot block
-    //uint32_t* next = the_boot_block + BLOCK_SIZE * (inode + 2);  // for endpoint
 
     /* if offset is greater than length of inode(first element of i is its length), then reached end of file */
     if (offset > *i) {
@@ -109,18 +112,15 @@ uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t leng
     /* loop through data and read to buffer */
     uint32_t bytes_read;
     for (bytes_read = 0; bytes_read < length; bytes_read += 4) {
-        uint32_t test1 = cur_datablock + position_in_file;
-        uint32_t* test2 = *(cur_datablock + position_in_file);
         // each value in buffer is only 1B, but we read 4B at a time:
-        uint32_t byte1 = (*(cur_datablock + position_in_file)) >> FIRST_BYTE_SHIFT;            // grabbing first 8 bits
-        uint32_t byte2 = ((*(cur_datablock + position_in_file)) >> SECOND_BYTE_SHIFT) & 0xFF;  // grabbing second 8 bits
-        uint32_t byte3 = ((*(cur_datablock + position_in_file)) >> THIRD_BYTE_SHIFT) & 0xFF;   // grabbing third 8 bits
-        uint32_t byte4 = ((*(cur_datablock + position_in_file))) & 0xFF;                       // grabbing last 8 bits
-        // flipped because data is stored in little-endian (little end first)
-        buf[bytes_read] = byte4;
-        buf[bytes_read + 1] = byte3;
-        buf[bytes_read + 2] = byte2;
-        buf[bytes_read + 3] = byte1;
+        uint32_t test01 = (*(cur_datablock + position_in_file)) >> 24;
+        uint32_t test02 = ((*(cur_datablock + position_in_file)) >> 16) & 0xFF;
+        uint32_t test03 = ((*(cur_datablock + position_in_file)) >> 8) & 0xFF;
+        uint32_t test04 = ((*(cur_datablock + position_in_file))) & 0xFF;
+        buf[bytes_read] = test04;
+        buf[bytes_read + 1] = test03;
+        buf[bytes_read + 2] = test02;
+        buf[bytes_read + 3] = test01;
 
         position_in_file++;
         /* if we reach end of current data block */
@@ -163,6 +163,10 @@ uint32_t file_open(const uint8_t* filename) {
     return -1;
 }
 
+/* file_close - doesn't do anything for this checkpoint
+ * Inputs   : fd - file descriptor (unused here)
+ * Outputs  : 0
+ */
 uint32_t file_close(uint32_t fd){
     return 0;
 }
@@ -179,21 +183,40 @@ uint32_t file_read(uint32_t fd, void* buf, uint32_t nbytes){
     return read_data(global_inode_index, 0, buf, nbytes);   // start at offset 0 because we want the whole file
 }
 
+/* file_write - doesn't do anything for this checkpoint
+ * Inputs   : file descriptor
+ *          : buffer
+ *          : nbytes
+ * Outputs  : -1
+ */
 uint32_t file_write(uint32_t fd, void* buf, uint32_t nbytes){
     return -1;      //do nothing, return -1
 }
 
 
-/* Separate functions for directory operations */
+/* dir_open - opens a directory file
+ * Inputs   : filename
+ * Outputs  : 0
+ */
 uint32_t dir_open(const int8_t* filename){
     /* use read_dentry_by_name */
     return 0;
 }
 
+/* dir_close - closes a directory file (does nothing this checkpoint)
+ * Inputs   : file descriptor
+ * Outputs  : 0
+ */
 uint32_t dir_close(uint32_t fd){
     return 0;       //"probably does nothing, return 0"
 }
 
+/* dir_read - reads files filename by filename, inluding "."
+ * Inputs   : fd - file descriptor
+ *          : buf - buffer we will be reading into
+ *          : nbytes - number of bytes to read
+ * Outputs  : >= 0 on success, -1 on failure
+ */
 // lists out files that you have
 uint32_t dir_read(uint32_t fd, void* buf, uint32_t nbytes){
     /* use read_dentry_by_index */
@@ -201,6 +224,12 @@ uint32_t dir_read(uint32_t fd, void* buf, uint32_t nbytes){
     return 0;
 }
 
+/* dir_write - should do nothing
+ * Inputs   : fd - file descriptor
+ *          : buf
+ *          : nbytes
+ * Outputs  : returns -1
+ */
 uint32_t dir_write(uint32_t fd, void* buf, uint32_t nbytes){
     return -1;      //do nothing, return -1
 }
