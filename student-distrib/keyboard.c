@@ -175,9 +175,16 @@ void process_key(uint8_t scancode){
         }
     }
     
-    // add letter to current buffer
-    add_to_buf(letter);
-    putc(letter);
+    // // add letter to current buffer
+    // add_to_buf(letter);
+    // putc(letter);
+
+    // only print when <=127 characters, so idx must be at most 126
+    if(buf_idx <= 126){
+        // add letter to current buffer
+        add_to_buf(letter);
+        putc(letter);
+    }
 }
 
 
