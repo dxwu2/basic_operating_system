@@ -19,6 +19,10 @@
                                     // so we only have room for 63 dir entries
                                     // (first dir entry is for itself, ".", so technically only 62 dir entries)
 #define BLOCK_SIZE          4096    // each block is 4kB
+#define FIRST_BYTE_SHIFT        24
+#define SECOND_BYTE_SHIFT       16
+#define THIRD_BYTE_SHIFT        8
+
 
 
 /* data block struct */

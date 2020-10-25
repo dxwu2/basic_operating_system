@@ -112,18 +112,15 @@ uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t leng
         uint32_t test1 = cur_datablock + position_in_file;
         uint32_t* test2 = *(cur_datablock + position_in_file);
         // each value in buffer is only 1B, but we read 4B at a time:
-        uint32_t test01 = (*(cur_datablock + position_in_file)) >> 24;
-        uint32_t test02 = ((*(cur_datablock + position_in_file)) >> 16) & 0xFF;
-        uint32_t test03 = ((*(cur_datablock + position_in_file)) >> 8) & 0xFF;
-        uint32_t test04 = ((*(cur_datablock + position_in_file))) & 0xFF;
-        buf[bytes_read] = test04;
-        buf[bytes_read + 1] = test03;
-        buf[bytes_read + 2] = test02;
-        buf[bytes_read + 3] = test01;
-        //buf[bytes_read] = ((*(cur_datablock + position_in_file)) >> 24) & 0xFF;
-        //buf[bytes_read + 1] = ((*(cur_datablock + position_in_file)) >> 16) & 0xFF;
-        //buf[bytes_read + 2] = ((*(cur_datablock + position_in_file)) >> 8) & 0xFF;
-        //buf[bytes_read + 3] = (*(cur_datablock + position_in_file)) & 0xFF;
+        uint32_t byte1 = (*(cur_datablock + position_in_file)) >> FIRST_BYTE_SHIFT;            // grabbing first 8 bits
+        uint32_t byte2 = ((*(cur_datablock + position_in_file)) >> SECOND_BYTE_SHIFT) & 0xFF;  // grabbing second 8 bits
+        uint32_t byte3 = ((*(cur_datablock + position_in_file)) >> THIRD_BYTE_SHIFT) & 0xFF;   // grabbing third 8 bits
+        uint32_t byte4 = ((*(cur_datablock + position_in_file))) & 0xFF;                       // grabbing last 8 bits
+        // flipped because data is stored in little-endian (little end first)
+        buf[bytes_read] = byte4;
+        buf[bytes_read + 1] = byte3;
+        buf[bytes_read + 2] = byte2;
+        buf[bytes_read + 3] = byte1;
 
         position_in_file++;
         /* if we reach end of current data block */
@@ -138,20 +135,6 @@ uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t leng
         }
     }
     return bytes_read;
-
-/*
-    // if end of file will be reached
-    if (i + offset + length >= next) {
-        memcpy(i + offset, buf, next - (i + offset));
-        return 0;
-    }
-    // if end of file won't be reached
-    else {
-        memcpy(i + offset, buf, length);
-    }
-    // return number of bytes read
-    return length;
-    */
 }
 
 

@@ -189,23 +189,15 @@ void fs_test_list_files(){
 void fs_test_read_file(){
 	TEST_HEADER;
 
-	uint32_t fd;	// unused
+	uint32_t fd;		// unused here
 	char buffer[1600];	// more than enough
-	file_open("frame0.txt");
+	file_open("frame1.txt");
 	file_read(&fd, &buffer, 1600);
 	int i;
-	for (i = 0; i < 24 * 12; i++) {
-		if (i == 120) {
-			int a = 0;
-		}
+	for (i = 0; i < 1600; i++) {
 		printf("%c", buffer[i]);
-		/*
-		if (i % 24 == 23) {
-			printf("\n");
-		}
-		*/
 	}
-	printf("\nfile_name: frame0.txt");
+	printf("\nfile_name: frame1.txt");
 }
 
 /* Checkpoint 3 tests */
