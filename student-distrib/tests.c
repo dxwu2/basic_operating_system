@@ -285,6 +285,7 @@ void fs_test_list_files(){
  * Side Effects	: prints out the contents of the specified file
  */
 void fs_test_read_small_file(){
+	/*
 	TEST_HEADER;
 
 	uint32_t fd;		// unused here
@@ -295,6 +296,33 @@ void fs_test_read_small_file(){
 	int i;
 	for (i = 0; i < 1600; i++) {
 		// printf("%c", buffer[i]);
+		putc(buffer[i]);
+	}
+	printf("\nfile_name: frame0.txt");
+	*/
+
+	TEST_HEADER;
+
+	uint32_t fd;		// unused here
+
+	// calculate size of file we're reading
+	dentry_t d;
+	read_dentry_by_name((int8_t*) "frame0.txt", &d);
+	uint32_t inode_index = d.inode_num;
+	uint32_t file_size = ((inode_t*)(fs_start_addr + (inode_index + 1) * BLOCK_SIZE))->length;
+	char buffer[file_size];
+
+	// fill buffer
+	file_open((uint8_t*)"frame0.txt");
+	file_read((uint32_t)&fd, &buffer, file_size);
+
+	// print out buffer (contents of file)
+	int i;
+	for (i = 0; i < file_size; i++) {
+		// eliminate NULLs
+		if (buffer[i] == 0 || buffer[i] == 1 || buffer[i] == 127) {
+			continue;
+		}
 		putc(buffer[i]);
 	}
 	printf("\nfile_name: frame0.txt");
@@ -322,9 +350,6 @@ void fs_test_read_executable(){
 	uint32_t file_size = ((inode_t*)(fs_start_addr + (inode_index + 1) * BLOCK_SIZE))->length;
 	// uint32_t file_size = 100;
 	char buffer[file_size];
-
-	// PICKUP: pull dave's changes maybe? try to get grep to print.
-	// issue: nothing prints may have to gdb. try OH too
 
 	// fill buffer
 	file_open((uint8_t*)"grep");
@@ -411,7 +436,6 @@ void fs_test_read_large_file(){
 	// 4044 = p
 	int i;
 	for (i = 0; i < file_size; i++) {
-		// printf("%c", buffer[i]);
 		putc(buffer[i]);
 	}
 
