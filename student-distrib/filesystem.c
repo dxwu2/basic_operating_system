@@ -3,10 +3,15 @@
 #include "filesystem.h"
 #include "lib.h"
 
+/* local static for boot block */
+static boot_block_t* the_boot_block = NULL;
 
 /* File system initialization
  * Only one module loaded in c, so it must be filesystem
  * Call init_file_system() from kernel.c using mod captured from multiboot info mbi
+ * Inputs:  fs_start - start address of filesystem module
+ *          fs_end - end address of filesystem module
+ * Outputs: returns 0 on success, -1 on failure (bits of module lost or field sizes don't add up)
  */
 uint32_t init_file_system(uint32_t fs_start, uint32_t fs_end){
     boot_block_t* potential_boot_block = (boot_block_t*) fs_start;     //fs_start is start addr of file system (boot block)
@@ -30,6 +35,7 @@ uint32_t init_file_system(uint32_t fs_start, uint32_t fs_end){
 }
 
 /* Helper functions defined */
+
 /* read_dentry_by_name - fills a dentry block with the file name, file type, and inode number for the file
  * Inputs   : fname - filename
  *          : dentry - ptr to the dentry block we want to fill
@@ -41,10 +47,11 @@ uint32_t read_dentry_by_name (const int8_t* fname, dentry_t* dentry){
     if(!the_boot_block)
         return -1;
     /* Check inputs for validity */
-    if((!fname) || (!dentry) || (strlen(fname) > FILENAME_LEN))
+    if(!fname || !dentry)
         return -1;
+    /* If fname length greater than 32, truncate to 32 chars for search */
+    int8_t fname_len = (strlen(fname) > FILENAME_LEN) ? FILENAME_LEN : strlen(fname);
     /* scan through dentries in boot block to find fname */
-    int8_t fname_len = strlen(fname);
     for(i = 0; i < NUM_DIRENTRIES; i++){
         dentry_t* potential_dentry = &(the_boot_block->direntries[i]);
         if(!strncmp(fname, potential_dentry->filename, fname_len)){
@@ -81,7 +88,6 @@ uint32_t read_dentry_by_index (uint32_t index, dentry_t* dentry){
  * Side effects : bytes read are placed in the buffer
  */
 uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t length){
-    //return -1 in event of inode outside valid range or if bad data block number in inode
     /* check if filesystem not initialized or if inode number is invalid */
     if (!the_boot_block || !buf || inode > (the_boot_block->inode_count) - 1) {
         return -1;
@@ -144,6 +150,7 @@ uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t leng
  * Define file operation functions separate from directory operations 
  * As stated in Discussion Week 9, return -1 for any write functions 
  */
+
  /* uint32_t file_open(const uint8_t* filename) - initializes any temporary structures
   * Inputs  : filename
   * Outputs : returns 0 on success, -1 on failure
@@ -186,9 +193,9 @@ uint32_t file_read(uint32_t fd, void* buf, uint32_t nbytes){
 }
 
 /* file_write - doesn't do anything for this checkpoint
- * Inputs   : file descriptor
- *          : buffer
- *          : nbytes
+ * Inputs   fd : file descriptor
+ *          buf : buffer
+ *          nbytes : number of bytes
  * Outputs  : -1
  */
 uint32_t file_write(uint32_t fd, void* buf, uint32_t nbytes){
@@ -196,7 +203,7 @@ uint32_t file_write(uint32_t fd, void* buf, uint32_t nbytes){
 }
 
 
-/* dir_open - opens a directory file
+/* dir_open - opens a directory file - initialize temporary structure
  * Inputs   : filename
  * Outputs  : 0
  */
@@ -220,7 +227,6 @@ uint32_t dir_close(uint32_t fd){
  *          : nbytes - number of bytes to read
  * Outputs  : >= 0 on success, -1 on failure
  */
-// lists out files that you have
 uint32_t dir_read(uint32_t fd, void* buf, uint32_t nbytes){
     // use of global variable to keep track of which file we are on (which index)
     global_file_index = fd;
@@ -231,7 +237,7 @@ uint32_t dir_read(uint32_t fd, void* buf, uint32_t nbytes){
 
 /* dir_write - should do nothing
  * Inputs   : fd - file descriptor
- *          : buf
+ *          : buf - buffer we will be writing into
  *          : nbytes
  * Outputs  : returns -1
  */

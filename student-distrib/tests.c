@@ -213,11 +213,11 @@ int fs_test_1(){
 	TEST_HEADER;
 
 	dentry_t test_dentry;
-	read_dentry_by_name("frame0.txt", &test_dentry);
-	if(strncmp(test_dentry.filename, "frame0.txt", 10) != 0)
+	read_dentry_by_name("verylargetextwithverylongname.txt", &test_dentry);
+	if(strncmp(test_dentry.filename, "verylargetextwithverylongname.tx", 32) != 0)
 		return FAIL;
-	/* "frame0.txt" should correspond to inode 38 and filetype 2*/
-	if(test_dentry.inode_num != 38 || test_dentry.filetype != 2)
+	/* "verylargetextwithverylongname.tx" should correspond to inode 44, filetype 2*/
+	if(test_dentry.inode_num != 44 || test_dentry.filetype != 2)
 		return FAIL;	
 	else
 		return PASS;
@@ -235,10 +235,10 @@ int fs_test_2(){
 	TEST_HEADER;
 
 	dentry_t test_dentry;
-	read_dentry_by_index(11, &test_dentry);
-	printf("filename: %s", test_dentry.filename);
+	read_dentry_by_index(7, &test_dentry);
 	if(strncmp(test_dentry.filename, "counter", 7) != 0)
 		return FAIL;
+	/* "counter" should correspond to inode 42, filetype 2 */
 	if(test_dentry.inode_num != 42 || test_dentry.filetype != 2)
 		return FAIL;
 	else
@@ -246,37 +246,44 @@ int fs_test_2(){
 	
 }
 
-/* fs_test_list_files - Tests dir_read (and therefore, read_dentry_by_name) by printing out all the files
+/* fs_test_list_files - Tests dir_read (and therefore, read_dentry_by_index) by printing out all the files
  * 
  * Inputs	: None
  * Outputs	: None
- * Coverage	: dir_read and read_dentry_by_name
+ * Coverage	: dir_read and read_dentry_by_index
  * Side Effects	: lists out all files (check discord general chat for what it should look like)
  */
-// void fs_test_list_files(){
-// 	TEST_HEADER;
+void fs_test_list_files(){
+	TEST_HEADER;
 
-// 	dentry_t cur_dentry;
-// 	int i;
-// 	for (i = 0; i < 17; i++) {
-// 		dir_read(i, &cur_dentry, 64);
-// 		uint32_t inode_idx = cur_dentry.inode_num;
-// 		inode_t* inode_addr = filesystem_start + (4096 * (inode_idx+1)); //calculate inode struct addr using inode number and start addr of filesystem
-// 		// if(cur_dentry.filename > FILENAME_LEN)
-//         // strncpy(cur_dentry.filename, cur_dentry.filename, 32);
-// 		printf("file_name: %s, file_type: %d, file_size: %d\n", cur_dentry.filename, cur_dentry.filetype, inode_addr->length);
-// 	}
+	dentry_t cur_dentry;
+	int i, j;
+	for (i = 0; i < 17; i++) {
+		dir_read(i, &cur_dentry, 64);
+
+		/* Create name buffer to copy fname into + one extra space for null '\0' char */
+		uint8_t fname[FILENAME_LEN + 1];
+		for(j = 0; j < FILENAME_LEN; j++){
+			fname[j] = cur_dentry.filename[j];
+		}
+		fname[32] = '\0';	//terminate any string over 32 chars with null char
+
+		uint32_t inode_idx = cur_dentry.inode_num;
+		inode_t* inode_addr = (inode_t*) (filesystem_start + (4096 * (inode_idx+1))); //calculate inode struct addr using inode number and start addr of filesystem
+		printf("file_name: %s, file_type: %d, file_size: %d\n", fname, cur_dentry.filetype, inode_addr->length);
+	}
 	
-// }
+}
 
-/* fs_test_read_file - Tests file_read (and thus, read_data) by printing out contents of a file
+/* fs_test_read_small_file - Tests file_read (and thus, read_data) by printing out contents of a file
+ * works for frame0.txt and frame1.txt (small files)
  * 
  * Inputs	: None
  * Outputs	: None
  * Coverage	: file_read and read_data
  * Side Effects	: prints out the contents of the specified file
  */
-void fs_test_read_file(){
+void fs_test_read_small_file(){
 	TEST_HEADER;
 
 	uint32_t fd;		// unused here
@@ -289,6 +296,52 @@ void fs_test_read_file(){
 		putc(buffer[i]);
 	}
 	printf("\nfile_name: frame0.txt");
+}
+
+
+/* fs_test_read_executable - Tests file_read (and thus, read_data) by printing out contents of an executable
+ * works for grep and ls (executables)
+ * 
+ * Inputs	: None
+ * Outputs	: None
+ * Coverage	: file_read and read_data
+ * Side Effects	: prints out the contents of the specified file
+ */
+void fs_test_read_executable(){
+	TEST_HEADER;
+
+	uint32_t fd;		// unused here
+	char buffer[1600];	// more than enough
+	file_open((uint8_t*)"grep");
+	file_read((uint32_t)&fd, &buffer, 1600);
+	int i;
+	for (i = 0; i < 1600; i++) {
+		putc(buffer[i]);
+	}
+	printf("\nfile_name: grep");
+}
+
+
+/* fs_test_read_large_file - Tests file_read (and thus, read_data) by printing out contents of a file
+ * works for  verylargetextwithverylongname.tx(t) (large files)
+ * 
+ * Inputs	: None
+ * Outputs	: None
+ * Coverage	: file_read and read_data
+ * Side Effects	: prints out the contents of the specified file
+ */
+void fs_test_read_large_file(){
+	TEST_HEADER;
+
+	uint32_t fd;		// unused here
+	char buffer[100000];	// more than enough
+	file_open((uint8_t*)"verylargetextwithverylongname.txt");
+	file_read((uint32_t)&fd, &buffer, 100000);
+	int i;
+	for (i = 0; i < 100000; i++) {
+		printf("%c", buffer[i]);
+	}
+	printf("\nfile_name: verylargetextwithverylongname.txt");
 }
 
 /* Checkpoint 3 tests */
@@ -316,5 +369,7 @@ void launch_tests(){
 	// TEST_OUTPUT("fs_test_1", fs_test_1());
 	// TEST_OUTPUT("fs_test_2", fs_test_2());
 	// fs_test_list_files();
-	fs_test_read_file();
+	// fs_test_read_small_file();
+	// fs_test_read_executable();
+	// fs_test_read_large_file();
 }
