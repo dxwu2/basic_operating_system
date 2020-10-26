@@ -22,12 +22,18 @@ uint32_t init_file_system(uint32_t fs_start, uint32_t fs_end){
         return -1;
     /* Maybe more checks?? */
 
-    else
+    else{
+        filesystem_start = (uint32_t) potential_boot_block;
         the_boot_block = potential_boot_block;      //officially set local boot block to fs_start
+    }
     return 0;
 }
 
-/* Helper functions defined */
+/* read_dentry_by_name - fills a dentry block with the file name, file type, and inode number for the file
+ * Inputs   : fname - file name
+ *          : dentry - ptr to the dentry block we want to fill
+ * Outputs  : returns 0 on success, -1 on failure (non-existent file or invalid index)
+ */
 uint32_t read_dentry_by_name (const int8_t* fname, dentry_t* dentry){
     unsigned i;     //for loop below
     /* Check if filesystem initialized */
@@ -203,7 +209,8 @@ uint32_t file_write(uint32_t fd, void* buf, uint32_t nbytes){
 
 /* Separate functions for directory operations */
 uint32_t dir_open(const int8_t* filename){
-    /* use read_dentry_by_name */
+    dentry_t* cur_dentry;
+    read_dentry_by_name(filename, cur_dentry);
     return 0;
 }
 
@@ -213,8 +220,10 @@ uint32_t dir_close(uint32_t fd){
 
 // lists out files that you have
 uint32_t dir_read(uint32_t fd, void* buf, uint32_t nbytes){
-    /* use read_dentry_by_index */
     // use of global variable to keep track of which file we are on (which index)
+    global_file_index = fd;
+    /* use read_dentry_by_index */
+    read_dentry_by_index(fd, buf);
     return 0;
 }
 

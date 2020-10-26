@@ -54,6 +54,7 @@ typedef struct inode {
 
 /* local static for boot block */
 static boot_block_t* the_boot_block = NULL;
+uint32_t filesystem_start;   //used to save start addr of filesystem
 int global_inode_index;     // used for file_read
 int global_file_index;      // used for dir_read
 
