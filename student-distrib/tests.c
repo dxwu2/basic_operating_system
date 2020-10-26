@@ -213,11 +213,11 @@ int fs_test_1(){
 	TEST_HEADER;
 
 	dentry_t test_dentry;
-	read_dentry_by_name("frame0.txt", &test_dentry);
-	if(strncmp(test_dentry.filename, "frame0.txt", 10) != 0)
+	read_dentry_by_name("verylargetextwithverylongname.txt", &test_dentry);
+	if(strncmp(test_dentry.filename, "verylargetextwithverylongname.tx", 32) != 0)
 		return FAIL;
-	/* "frame0.txt" should correspond to inode 38 and filetype 2*/
-	if(test_dentry.inode_num != 38 || test_dentry.filetype != 2)
+	/* "verylargetextwithverylongname.tx" should correspond to inode 44, filetype 2*/
+	if(test_dentry.inode_num != 44 || test_dentry.filetype != 2)
 		return FAIL;	
 	else
 		return PASS;
@@ -238,6 +238,7 @@ int fs_test_2(){
 	read_dentry_by_index(7, &test_dentry);
 	if(strncmp(test_dentry.filename, "counter", 7) != 0)
 		return FAIL;
+	/* "counter" should correspond to inode 42, filetype 2 */
 	if(test_dentry.inode_num != 42 || test_dentry.filetype != 2)
 		return FAIL;
 	else
@@ -256,12 +257,20 @@ void fs_test_list_files(){
  	TEST_HEADER;
 
 	dentry_t cur_dentry;
-	int i;
+	int i, j;
 	for (i = 0; i < 17; i++) {
 		dir_read(i, &cur_dentry, 64);
+
+		/* Create name buffer to copy fname into + one extra space for null '\0' char */
+		uint8_t fname[FILENAME_LEN + 1];
+		for(j = 0; j < FILENAME_LEN; j++){
+			fname[j] = cur_dentry.filename[j];
+		}
+		fname[32] = '\0';	//terminate any string over 32 chars with null char
+
 		uint32_t inode_idx = cur_dentry.inode_num;
-		inode_t* inode_addr = filesystem_start + (4096 * (inode_idx+1)); //calculate inode struct addr using inode number and start addr of filesystem
-		printf("file_name: %s, file_type: %d, file_size: %d\n", cur_dentry.filename, cur_dentry.filetype, inode_addr->length);
+		inode_t* inode_addr = (inode_t*) (filesystem_start + (4096 * (inode_idx+1))); //calculate inode struct addr using inode number and start addr of filesystem
+		printf("file_name: %s, file_type: %d, file_size: %d\n", fname, cur_dentry.filetype, inode_addr->length);
 	}
 	
 }
@@ -305,9 +314,10 @@ void fs_test_read_executable(){
 	// calculate size of file we're reading
 	dentry_t d;
 	read_dentry_by_name((int8_t*) "grep", &d);
-	//uint32_t inode_index = d.inode_num;
+	uint32_t inode_index = d.inode_num;
 	//uint32_t file_size = ((inode_t*)(fs_start_addr + (inode_index + 1) * BLOCK_SIZE/sizeof(inode_t)))->length;
-	uint32_t file_size = 1000;
+	uint32_t file_size = ((inode_t*)(fs_start_addr + (inode_index + 1) * BLOCK_SIZE))->length;
+	// uint32_t file_size = 100;
 	char buffer[file_size];
 
 	// PICKUP: pull dave's changes maybe? try to get grep to print.
@@ -320,7 +330,7 @@ void fs_test_read_executable(){
 	// print out buffer (contents of file)
 	int i;
 	for (i = 0; i < file_size; i++) {
-		if (buffer[i] == 0) {
+		if (buffer[i] == 0 || buffer[i] == 1 || buffer[i] == 127) {
 			continue;
 		}
 		putc(buffer[i]);
@@ -336,6 +346,7 @@ void fs_test_read_executable(){
  * Coverage	: file_read and read_data
  * Side Effects	: prints out the contents of the specified file
  */
+/*
 void fs_test_read_large_file(){
 	TEST_HEADER;
 
@@ -350,7 +361,7 @@ void fs_test_read_large_file(){
 	}
 	printf("\nfile_name: verylargetextwithverylongname.txt");
 }
-/*
+*/
 void fs_test_read_large_file(){
 	TEST_HEADER;
 
@@ -374,7 +385,7 @@ void fs_test_read_large_file(){
 	}
 	printf("\nfile_name: verylargetextwithverylongname.txt");
 }
-*/
+
 
 /* Checkpoint 3 tests */
 /* Checkpoint 4 tests */
