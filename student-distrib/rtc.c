@@ -4,6 +4,7 @@
 #include "lib.h"
 #include "rtc.h"
 
+volatile int rtc_interrupt_occurred;    // flag for rtc
 
 /*
  * rtc_init
@@ -14,7 +15,6 @@
  *   SIDE EFFECTS: Enables IRQ on pic, outputs data to RTC data port
  */   
 //frequency =  32768 >> (rate-1);
-volatile int rtc_interrupt_occurred;
 void rtc_init(){
     //disable interrupts
     // cli(); 
@@ -29,7 +29,7 @@ void rtc_init(){
 	outb((a_val & 0xF0) | rate, DATA_PORT); //set rate
     outb(SREG_C, IDX_PORT);	// select register C
     inb(DATA_PORT);		//throw away contents
-    enable_irq(8);  //enable irq
+    enable_irq(8);  //enable irq on pin 8 (first pin on slave)
     return;
 }
 
@@ -103,8 +103,11 @@ int32_t rtc_write(int32_t fd, const void* buf, int32_t nbytes) {
  */
 int set_rtcFrequency (int frequency) {
     int rate;
+    // if not within range, return -1
     if (frequency < 2 || frequency > 1024)
         return -1;
+
+    // determine frequency by powers of 2
     if (frequency == 2)
 	    rate = 0x0F;
 	if (frequency == 4)
@@ -125,12 +128,14 @@ int set_rtcFrequency (int frequency) {
 		rate = 0x07;
 	if (frequency == 1024)
 		rate = 0x06;
+
     cli();
 	outb(SREG_A, IDX_PORT);  //select regA
 	char a_val = inb(DATA_PORT); //hold the value of reg A
 	outb(SREG_A, IDX_PORT); //select regA again
 	outb((a_val & 0xF0) | rate, DATA_PORT); //set rate
 	sti();
+
     return 0;
 }
 
@@ -150,7 +155,7 @@ void rtc_handler(){
     inb(DATA_PORT);		//throw away contents
     rtc_interrupt_occurred = 1;
     //test_interrupts();
-    send_eoi(8); //send eoi to RTC
+    send_eoi(8); //send eoi to RTC, slave pin 1 so 8
     sti(); //restore
     return;
 }

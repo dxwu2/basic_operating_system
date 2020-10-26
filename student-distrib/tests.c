@@ -255,7 +255,7 @@ int fs_test_2(){
  * Side Effects	: lists out all files (check discord general chat for what it should look like)
  */
 void fs_test_list_files(){
-	TEST_HEADER;
+ 	TEST_HEADER;
 
 	dentry_t cur_dentry;
 	int i, j;
@@ -288,7 +288,8 @@ void fs_test_read_small_file(){
 	TEST_HEADER;
 
 	uint32_t fd;		// unused here
-	char buffer[1600];	// more than enough
+	char buffer[1600];	// 1600 is more than enough
+	
 	file_open((uint8_t*)"frame0.txt");
 	file_read((uint32_t)&fd, &buffer, 1600);
 	int i;
@@ -312,42 +313,32 @@ void fs_test_read_executable(){
 	TEST_HEADER;
 
 	uint32_t fd;		// unused here
-	char buffer[100000];	// more than enough
+
+	// calculate size of file we're reading
+	dentry_t d;
+	read_dentry_by_name((int8_t*) "grep", &d);
+	uint32_t inode_index = d.inode_num;
+	//uint32_t file_size = ((inode_t*)(fs_start_addr + (inode_index + 1) * BLOCK_SIZE/sizeof(inode_t)))->length;
+	uint32_t file_size = ((inode_t*)(fs_start_addr + (inode_index + 1) * BLOCK_SIZE))->length;
+	// uint32_t file_size = 100;
+	char buffer[file_size];
+
+	// PICKUP: pull dave's changes maybe? try to get grep to print.
+	// issue: nothing prints may have to gdb. try OH too
+
+	// fill buffer
 	file_open((uint8_t*)"grep");
-	file_read((uint32_t)&fd, &buffer, 100000);
+	file_read((uint32_t)&fd, &buffer, file_size);
+
+	// print out buffer (contents of file)
 	int i;
-	for (i = 0; i < 100000; i++) {
+	for (i = 0; i < file_size; i++) {
+		if (buffer[i] == 0 || buffer[i] == 1 || buffer[i] == 127) {
+			continue;
+		}
 		putc(buffer[i]);
 	}
 	printf("\nfile_name: grep");
-}
-
-
-/* fs_test_read_large_file - Tests file_read (and thus, read_data) by printing out contents of a file
- * works for  verylargetextwithverylongname.tx(t) (large files)
- * 
- * Inputs	: None
- * Outputs	: None
- * Coverage	: file_read and read_data
- * Side Effects	: prints out the contents of the specified file
- */
-void fs_test_read_large_file(){
-	TEST_HEADER;
-	int test;
-	uint32_t fd;		// unused here
-	uint32_t bytes;
-	char buffer[6000];	// more than enough
-
-
-	file_open((uint8_t*)"verylargetextwithverylongname.txt");
-	bytes = file_read((uint32_t)&fd, &buffer, 6000);
-	int i;
-	for (i = 0; i < bytes; i++) {
-		// printf("%c", buffer[i]);
-		putc(buffer[i]);
-		test = i;
-	}
-	printf("\nfile_name: verylargetextwithverylongname.txt");
 }
 
 
@@ -361,8 +352,11 @@ void rtc_test()
 {
 	int i, j;
 	rtc_open(0);
+
+	// go up by powers of two
  	for (i = 1; i < 2048; i*=2) {
 		printf("Frequency: %d test:", i);
+		// go up 10 numbers at most
  		for(j = 0; j < 10; j++) {
  			rtc_read(0, 0, 0);
  			printf("%d ", i);
@@ -371,14 +365,59 @@ void rtc_test()
 		 	printf("failed");
  		printf("\n");
 	}
+
  	rtc_close(0);
 	rtc_open(0);
+
+	// again, go up 10 numbers at most
 	for (i = 0; i < 10; i++){
 		rtc_read(0, 0, 0);
  		printf("%d ", i);
 	}
+
 	rtc_close(0);
 }
+
+
+/* fs_test_read_large_file - Tests file_read (and thus, read_data) by printing out contents of a file
+ * works for  verylargetextwithverylongname.tx(t) (large files)
+ * 
+ * Inputs	: None
+ * Outputs	: None
+ * Coverage	: file_read and read_data
+ * Side Effects	: prints out the contents of the specified file
+ */
+void fs_test_read_large_file(){
+	TEST_HEADER;
+
+	uint32_t fd;		// unused here
+
+	// calculate size of file we're reading
+	dentry_t d;
+	// char buffer[6000];		// more than enough
+
+	read_dentry_by_name((int8_t*) "verylargetextwithverylongname.txt", &d);
+	uint32_t inode_index = d.inode_num;
+	uint32_t file_size = ((inode_t*)(fs_start_addr + (inode_index + 1) * BLOCK_SIZE))->length;
+	char buffer[file_size];
+
+	// fill buffer
+	file_open((uint8_t*)"verylargetextwithverylongname.txt");
+	file_read((uint32_t)&fd, &buffer, file_size);
+
+	// print out buffer (contents of file)
+	// 4029 starts lower case
+	// 4043 = o
+	// 4044 = p
+	int i;
+	for (i = 0; i < file_size; i++) {
+		// printf("%c", buffer[i]);
+		putc(buffer[i]);
+	}
+
+	printf("\nfile_name: verylargetextwithverylongname.txt");
+}
+
 
 /* Checkpoint 3 tests */
 /* Checkpoint 4 tests */
@@ -407,5 +446,5 @@ void launch_tests(){
 	// fs_test_list_files();
 	// fs_test_read_small_file();
 	// fs_test_read_executable();
-	fs_test_read_large_file();
+	// fs_test_read_large_file();
 }

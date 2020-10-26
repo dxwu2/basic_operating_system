@@ -12,6 +12,7 @@
 #include "paging.h"
 #include "rtc.h"
 #include "filesystem.h"
+#include "types.h"
 #define RUN_TESTS
 
 /* Macros. */
@@ -58,6 +59,7 @@ void entry(unsigned long magic, unsigned long addr) {
         /*Initialize filesystem using boot block referenced by mod*/
         init_file_system(mod->mod_start, mod->mod_end);
         while (mod_count < mbi->mods_count) {
+            fs_start_addr = mod->mod_start;
             printf("Module %d loaded at address: 0x%#x\n", mod_count, (unsigned int)mod->mod_start);        // important
             printf("Module %d ends at address: 0x%#x\n", mod_count, (unsigned int)mod->mod_end);
             printf("First few bytes of module:\n");
