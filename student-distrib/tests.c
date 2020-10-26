@@ -1,6 +1,7 @@
 #include "tests.h"
 #include "x86_desc.h"
 #include "lib.h"
+#include "terminal.h"
 #include "filesystem.h"
 
 #define PASS 1
@@ -119,6 +120,88 @@ void null_test(){
 
 /* Checkpoint 2 tests */
 
+/* Tests if terminal_read/write properly reads data from keyboard buffer
+	and writes data to terminal correctly
+ * 
+ * Inputs	: None
+ * Outputs	: None
+ * Side Effects	: Echos whatever was typed, still retains terminal buffer when clearing screen (CTRL+l/L)
+ */
+void terminal_test1(){
+	int32_t cnt;
+	char buf[KEYBOARD_BUF_SIZE];
+
+	while(1){
+		cnt = terminal_read(1, buf, KEYBOARD_BUF_SIZE);
+		// printf("(%d)\n", cnt);
+		terminal_write(1, buf, cnt);
+	}
+}
+
+
+/* Testing to see if terminal_write does not stop writing at a null byte
+ * Inputs	: None
+ * Outputs	: None
+ * Side Effects	: Prints the number of bytes written at end (should be KEYBOARD_BUF_SIZE=128)
+ * 					Also does not print null bytes
+ */
+void terminal_test2(){
+	int i;
+	int32_t cnt;
+	char* buf[KEYBOARD_BUF_SIZE];
+
+	printf("Original characters: ");
+	// for loop will only go up to 15 characters, meaning rest are null bytes
+	for(i = 0; i < 15; i++){
+		((char*)buf)[i] = i + 65;		// 65 for start of capital letters
+		putc(((char*)buf)[i]);			// print out original 15 characters
+	}
+
+	// new line to compare
+	printf("\nTesting terminal_write: ");
+	cnt = terminal_write(1, buf, KEYBOARD_BUF_SIZE);
+	printf(" (%d)", cnt);									// prints number of bytes written, should not stop at nulll byte!
+}
+
+
+/* Tests if terminal_read handles case where size sent by user does not match size of buffer
+ *
+ * Inputs	: None
+ * Outputs	: None
+ * Side Effects	: Should only read at most 2 characters, and print 2 characters
+ */
+void terminal_test3(){
+	int i;
+	int32_t cnt;
+	char* buf[KEYBOARD_BUF_SIZE];
+
+	cnt = terminal_read(1, buf, 2);		// 2 is definitely less than average word length		
+	printf("terminal_read result: ");
+	for(i = 0; i < cnt; i++){
+		putc(((char*)buf)[i]);
+	}
+
+}
+
+
+/* Tests terminal_open/close
+ *
+ * Inputs	: None
+ * Outputs	: None
+ * Side Effects	: Should print PASS (both open and close return 0, so see if it matches)
+ */
+void terminal_test4(){
+	int32_t open;
+	int32_t close;
+	const uint8_t* filename;		// points to null
+
+	open = terminal_open(filename) == 0 ? PASS : FAIL;
+	close = terminal_close(1) == 0 ? PASS : FAIL;
+	TEST_OUTPUT("terminal_open", open);
+	TEST_OUTPUT("terminal_close", close);
+}
+
+
 /*fs_test_1() - Tests if helper function can read a directory entry by name
  * 
  * Inputs	: None
@@ -170,7 +253,7 @@ int fs_test_2(){
  * Side Effects	: lists out all files (check discord general chat for what it should look like)
  */
 void fs_test_list_files(){
-	TEST_HEADER;
+ 	TEST_HEADER;
 
 	dentry_t cur_dentry;
 	int i;
@@ -200,7 +283,8 @@ void fs_test_read_small_file(){
 	file_read((uint32_t)&fd, &buffer, 1600);
 	int i;
 	for (i = 0; i < 1600; i++) {
-		printf("%c", buffer[i]);
+		// printf("%c", buffer[i]);
+		putc(buffer[i]);
 	}
 	printf("\nfile_name: frame0.txt");
 }
@@ -217,11 +301,28 @@ void fs_test_read_executable(){
 	TEST_HEADER;
 
 	uint32_t fd;		// unused here
-	char buffer[1600];	// more than enough
+
+	// calculate size of file we're reading
+	dentry_t d;
+	read_dentry_by_name((int8_t*) "grep", &d);
+	//uint32_t inode_index = d.inode_num;
+	//uint32_t file_size = ((inode_t*)(fs_start_addr + (inode_index + 1) * BLOCK_SIZE/sizeof(inode_t)))->length;
+	uint32_t file_size = 1000;
+	char buffer[file_size];
+
+	// PICKUP: pull dave's changes maybe? try to get grep to print.
+	// issue: nothing prints may have to gdb. try OH too
+
+	// fill buffer
 	file_open((uint8_t*)"grep");
-	file_read((uint32_t)&fd, &buffer, 1600);
+	file_read((uint32_t)&fd, &buffer, file_size);
+
+	// print out buffer (contents of file)
 	int i;
-	for (i = 0; i < 1600; i++) {
+	for (i = 0; i < file_size; i++) {
+		if (buffer[i] == 0) {
+			continue;
+		}
 		putc(buffer[i]);
 	}
 	printf("\nfile_name: grep");
@@ -239,15 +340,41 @@ void fs_test_read_large_file(){
 	TEST_HEADER;
 
 	uint32_t fd;		// unused here
-	char buffer[100000];	// more than enough
+	uint32_t s = 5244;
+	char buffer[s];	// more than enough
 	file_open((uint8_t*)"verylargetextwithverylongname.txt");
-	file_read((uint32_t)&fd, &buffer, 100000);
+	file_read((uint32_t)&fd, &buffer, s);
 	int i;
-	for (i = 0; i < 100000; i++) {
+	for (i = 0; i < s; i++) {
 		printf("%c", buffer[i]);
 	}
 	printf("\nfile_name: verylargetextwithverylongname.txt");
 }
+/*
+void fs_test_read_large_file(){
+	TEST_HEADER;
+
+	uint32_t fd;		// unused here
+
+	// calculate size of file we're reading
+	dentry_t d;
+	read_dentry_by_name((int8_t*) "verylargetextwithverylongname.txt", &d);
+	uint32_t inode_index = d.inode_num;
+	uint32_t file_size = ((inode_t*)(fs_start_addr + (inode_index + 1) * BLOCK_SIZE/sizeof(inode_t)))->length;
+	char buffer[file_size];
+
+	// fill buffer
+	file_open((uint8_t*)"verylargetextwithverylongname.txt");
+	file_read((uint32_t)&fd, &buffer, file_size);
+
+	// print out buffer (contents of file)
+	int i;
+	for (i = 0; i < file_size; i++) {
+		printf("%c", buffer[i]);
+	}
+	printf("\nfile_name: verylargetextwithverylongname.txt");
+}
+*/
 
 /* Checkpoint 3 tests */
 /* Checkpoint 4 tests */
@@ -262,6 +389,10 @@ void fs_test_read_large_file(){
 /* Test suite entry point */
 void launch_tests(){
 	// launch your tests here
+	// terminal_test1();
+	// terminal_test2();
+	// terminal_test3();
+	// terminal_test4();
 	// TEST_OUTPUT("idt_test", idt_test());
 	// divide_by_zero_test();
 	// system_call_test();

@@ -25,6 +25,8 @@ void clear(void) {
 
     screen_x = 0;
     screen_y = 0;
+
+    update_cursor(screen_x, screen_y);
 }
 
 /* Standard printf().
@@ -171,16 +173,38 @@ int32_t puts(int8_t* s) {
  * Return Value: void
  *  Function: Output a character to the console */
 void putc(uint8_t c) {
+    // do not print null bytes
+    if(c == '\0'){
+        return;
+    }
+
     if(c == '\n' || c == '\r') {
         screen_y++;
         screen_x = 0;
-    } else {
+    } 
+    else {
         *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = c;
         *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB;
+
+        // if screen x is more than num of cols
         screen_x++;
-        screen_x %= NUM_COLS;
-        screen_y = (screen_y + (screen_x / NUM_COLS)) % NUM_ROWS;
+        // screen_y = (screen_y + (screen_x / NUM_COLS)) % NUM_ROWS;
     }
+
+    if(screen_x >= NUM_COLS){
+            screen_x = 0;               // reset x coord
+            screen_y++;                 // move down a row
+        }
+
+    // also need to handle when y reaches end
+    if(screen_y >= NUM_ROWS){
+        vert_scroll();              // function for vert scroll -> shift all video memory up by one
+        screen_y = NUM_ROWS-1;      // we do not want to be directly at bottom, but one row up
+        screen_x = 0;
+    }
+
+    // update cursor function ...
+    update_cursor(screen_x, screen_y);
 }
 
 /* int8_t* itoa(uint32_t value, int8_t* buf, int32_t radix);
@@ -475,5 +499,60 @@ void test_interrupts(void) {
     int32_t i;
     for (i = 0; i < NUM_ROWS * NUM_COLS; i++) {
         video_mem[i << 1]++;
+    }
+}
+
+
+/* void update_cursor(void)
+ * Inputs: void
+ * Return Value: void
+ * Function: updates cursor location */
+void update_cursor(int x, int y) {
+    uint16_t pos = y * NUM_COLS + x;
+
+    // per osdev
+    outb(0x0F, 0x3D4);
+	outb((uint8_t) (pos & 0xFF), 0x3D5);
+	outb(0x0E, 0x3D4);
+	outb((uint8_t) ((pos >> 8) & 0xFF), 0x3D5);
+}
+
+
+/* backspace(void)
+ * Inputs: void
+ * Return Value: void
+ * Function: Erases most recent char from screen (if exists) */
+void backspace(void) {
+    screen_x--;     // decrement x because we just erased a char
+    screen_x %= NUM_COLS;
+    screen_y = (screen_y + (screen_x / NUM_COLS)) % NUM_ROWS;
+
+    *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = '\0';
+    *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB;
+
+    update_cursor(screen_x, screen_y);      // update cursor
+}
+
+
+/* void vert_scroll(void)
+ * Inputs: void
+ * Return Value: void
+ * Function: implements vertical scrolling when screen_y hits end */
+void vert_scroll(void) {
+    // need to copy memory one row up AND clear last row
+    int32_t i;      // for indexing
+
+    // First: copy memory one row up from 0 to NUM_ROWS-1 (we want last one so stop there)
+    // just replace i with the x_offset location == NUM_COLS+i == width+i
+    for (i = 0; i < (NUM_ROWS-1) * NUM_COLS; i++) {
+        *(uint8_t *)(video_mem + (i << 1)) = *(uint8_t *)(video_mem + ((NUM_COLS + i) << 1));               // looks at next row's video memory
+        *(uint8_t *)(video_mem + (i << 1) + 1) = *(uint8_t *)(video_mem + ((NUM_COLS + i) << 1) + 1);       // just looks at the next row's ATTRIB    
+    }
+
+    // clear last row - so start where we ended above
+    // this is basically clear()
+    for (i = (NUM_ROWS-1) * NUM_COLS; i < NUM_ROWS * NUM_COLS; i++) {
+        *(uint8_t *)(video_mem + (i << 1)) = ' ';
+        *(uint8_t *)(video_mem + (i << 1) + 1) = ATTRIB;
     }
 }

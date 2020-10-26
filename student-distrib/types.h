@@ -21,6 +21,9 @@ typedef unsigned short uint16_t;
 typedef char int8_t;
 typedef unsigned char uint8_t;
 
+/* global variables */
+uint32_t fs_start_addr;
+
 #endif /* ASM */
 
 #endif /* _TYPES_H */

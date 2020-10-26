@@ -41,7 +41,7 @@ void init_paging(void) {
     page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].P = 1;
     page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].U = 0; // vid mem should be set to supervisor only since it is kernel mapping
     page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].C = 0; // vid mem contains memory mapped I/O and shouldn't be cached
-    page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].offset31_12 = 0xB8;
+    page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].offset31_12 = VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB; // vid mem contains memory mapped I/O and shouldn't be cached
 
     /* first PDE should be for video memory */
     page_directory[0].P = 1;        // mark as present
