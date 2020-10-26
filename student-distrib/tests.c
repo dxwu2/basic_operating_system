@@ -3,6 +3,7 @@
 #include "lib.h"
 #include "terminal.h"
 #include "filesystem.h"
+#include "rtc.h"
 
 #define PASS 1
 #define FAIL 0
@@ -288,7 +289,8 @@ void fs_test_read_small_file(){
 	TEST_HEADER;
 
 	uint32_t fd;		// unused here
-	char buffer[1600];	// more than enough
+	char buffer[1600];	// 1600 is more than enough
+	
 	file_open((uint8_t*)"frame0.txt");
 	file_read((uint32_t)&fd, &buffer, 1600);
 	int i;
@@ -325,6 +327,7 @@ void fs_test_read_small_file(){
 	}
 	printf("\nfile_name: frame0.txt");
 }
+
 
 /* fs_test_read_executable - Tests file_read (and thus, read_data) by printing out contents of an executable
  * works for grep and ls (executables)
@@ -363,8 +366,46 @@ void fs_test_read_executable(){
 	printf("\nfile_name: grep");
 }
 
-/* fs_test_read_large_file - Tests file_read (and thus, read_data) by printing out contents of an executable
- * works for verylargetextwithverylongname.txt
+
+/* rtc_test
+* Description: tests rtc driver
+* Inputs: None
+* Outputs: None
+* Side Effects: print to screen, open rtc.
+*/
+void rtc_test()
+{
+	int i, j;
+	rtc_open(0);
+
+	// go up by powers of two
+ 	for (i = 1; i < 2048; i*=2) {
+		printf("Frequency: %d test:", i);
+		// go up 10 numbers at most
+ 		for(j = 0; j < 10; j++) {
+ 			rtc_read(0, 0, 0);
+ 			printf("%d ", i);
+ 		}
+ 		if (rtc_write(0, (void*) &i, sizeof(int)) == -1)
+		 	printf("failed");
+ 		printf("\n");
+	}
+
+ 	rtc_close(0);
+	rtc_open(0);
+
+	// again, go up 10 numbers at most
+	for (i = 0; i < 10; i++){
+		rtc_read(0, 0, 0);
+ 		printf("%d ", i);
+	}
+
+	rtc_close(0);
+}
+
+
+/* fs_test_read_large_file - Tests file_read (and thus, read_data) by printing out contents of a file
+ * works for  verylargetextwithverylongname.tx(t) (large files)
  * 
  * Inputs	: None
  * Outputs	: None
@@ -378,6 +419,8 @@ void fs_test_read_large_file(){
 
 	// calculate size of file we're reading
 	dentry_t d;
+	// char buffer[6000];		// more than enough
+
 	read_dentry_by_name((int8_t*) "verylargetextwithverylongname.txt", &d);
 	uint32_t inode_index = d.inode_num;
 	uint32_t file_size = ((inode_t*)(fs_start_addr + (inode_index + 1) * BLOCK_SIZE))->length;
@@ -388,10 +431,14 @@ void fs_test_read_large_file(){
 	file_read((uint32_t)&fd, &buffer, file_size);
 
 	// print out buffer (contents of file)
+	// 4029 starts lower case
+	// 4043 = o
+	// 4044 = p
 	int i;
 	for (i = 0; i < file_size; i++) {
 		putc(buffer[i]);
 	}
+
 	printf("\nfile_name: verylargetextwithverylongname.txt");
 }
 
@@ -413,7 +460,7 @@ void launch_tests(){
 	// terminal_test2();
 	// terminal_test3();
 	// terminal_test4();
-	// TEST_OUTPUT("idt_test", idt_test());
+	// rtc_test();
 	// divide_by_zero_test();
 	// system_call_test();
 	// paging_test1();
@@ -423,5 +470,5 @@ void launch_tests(){
 	// fs_test_list_files();
 	// fs_test_read_small_file();
 	// fs_test_read_executable();
-	// fs_test_read_large_file();
+	fs_test_read_large_file();
 }
