@@ -284,6 +284,7 @@ void fs_test_list_files(){
  * Side Effects	: prints out the contents of the specified file
  */
 void fs_test_read_small_file(){
+	/*
 	TEST_HEADER;
 
 	uint32_t fd;		// unused here
@@ -293,6 +294,33 @@ void fs_test_read_small_file(){
 	int i;
 	for (i = 0; i < 1600; i++) {
 		// printf("%c", buffer[i]);
+		putc(buffer[i]);
+	}
+	printf("\nfile_name: frame0.txt");
+	*/
+
+	TEST_HEADER;
+
+	uint32_t fd;		// unused here
+
+	// calculate size of file we're reading
+	dentry_t d;
+	read_dentry_by_name((int8_t*) "frame0.txt", &d);
+	uint32_t inode_index = d.inode_num;
+	uint32_t file_size = ((inode_t*)(fs_start_addr + (inode_index + 1) * BLOCK_SIZE))->length;
+	char buffer[file_size];
+
+	// fill buffer
+	file_open((uint8_t*)"frame0.txt");
+	file_read((uint32_t)&fd, &buffer, file_size);
+
+	// print out buffer (contents of file)
+	int i;
+	for (i = 0; i < file_size; i++) {
+		// eliminate NULLs
+		if (buffer[i] == 0 || buffer[i] == 1 || buffer[i] == 127) {
+			continue;
+		}
 		putc(buffer[i]);
 	}
 	printf("\nfile_name: frame0.txt");
@@ -320,9 +348,6 @@ void fs_test_read_executable(){
 	// uint32_t file_size = 100;
 	char buffer[file_size];
 
-	// PICKUP: pull dave's changes maybe? try to get grep to print.
-	// issue: nothing prints may have to gdb. try OH too
-
 	// fill buffer
 	file_open((uint8_t*)"grep");
 	file_read((uint32_t)&fd, &buffer, file_size);
@@ -338,30 +363,14 @@ void fs_test_read_executable(){
 	printf("\nfile_name: grep");
 }
 
-/* fs_test_read_large_file - Tests file_read (and thus, read_data) by printing out contents of a file
- * works for  verylargetextwithverylongname.tx(t) (large files)
+/* fs_test_read_large_file - Tests file_read (and thus, read_data) by printing out contents of an executable
+ * works for verylargetextwithverylongname.txt
  * 
  * Inputs	: None
  * Outputs	: None
  * Coverage	: file_read and read_data
  * Side Effects	: prints out the contents of the specified file
  */
-/*
-void fs_test_read_large_file(){
-	TEST_HEADER;
-
-	uint32_t fd;		// unused here
-	uint32_t s = 5244;
-	char buffer[s];	// more than enough
-	file_open((uint8_t*)"verylargetextwithverylongname.txt");
-	file_read((uint32_t)&fd, &buffer, s);
-	int i;
-	for (i = 0; i < s; i++) {
-		printf("%c", buffer[i]);
-	}
-	printf("\nfile_name: verylargetextwithverylongname.txt");
-}
-*/
 void fs_test_read_large_file(){
 	TEST_HEADER;
 
@@ -371,7 +380,7 @@ void fs_test_read_large_file(){
 	dentry_t d;
 	read_dentry_by_name((int8_t*) "verylargetextwithverylongname.txt", &d);
 	uint32_t inode_index = d.inode_num;
-	uint32_t file_size = ((inode_t*)(fs_start_addr + (inode_index + 1) * BLOCK_SIZE/sizeof(inode_t)))->length;
+	uint32_t file_size = ((inode_t*)(fs_start_addr + (inode_index + 1) * BLOCK_SIZE))->length;
 	char buffer[file_size];
 
 	// fill buffer
@@ -381,7 +390,7 @@ void fs_test_read_large_file(){
 	// print out buffer (contents of file)
 	int i;
 	for (i = 0; i < file_size; i++) {
-		printf("%c", buffer[i]);
+		putc(buffer[i]);
 	}
 	printf("\nfile_name: verylargetextwithverylongname.txt");
 }
@@ -413,6 +422,6 @@ void launch_tests(){
 	// TEST_OUTPUT("fs_test_2", fs_test_2());
 	// fs_test_list_files();
 	// fs_test_read_small_file();
-	fs_test_read_executable();
+	// fs_test_read_executable();
 	// fs_test_read_large_file();
 }

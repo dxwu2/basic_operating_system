@@ -120,11 +120,11 @@ uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t leng
     /* loop through data and read to buffer */
     uint32_t bytes_read;
     for (bytes_read = 0; bytes_read < length; bytes_read += 4) {
-        // each value in buffer is only 1B, but we read 4B at a time:
-        uint32_t test01 = (*(cur_datablock + position_in_file)) >> 24;
-        uint32_t test02 = ((*(cur_datablock + position_in_file)) >> 16) & 0xFF;
-        uint32_t test03 = ((*(cur_datablock + position_in_file)) >> 8) & 0xFF;
-        uint32_t test04 = ((*(cur_datablock + position_in_file))) & 0xFF;
+        // each value in buffer is only 1B, but we read 4B at a time (in little endian format):
+        uint32_t test01 = (*(cur_datablock + position_in_file)) >> 24;              // we want leftmost byte
+        uint32_t test02 = ((*(cur_datablock + position_in_file)) >> 16) & 0xFF;     // we want second byte
+        uint32_t test03 = ((*(cur_datablock + position_in_file)) >> 8) & 0xFF;      // we want third byte
+        uint32_t test04 = ((*(cur_datablock + position_in_file))) & 0xFF;           // we want rightmost byte
         buf[bytes_read] = test04;
         buf[bytes_read + 1] = test03;
         buf[bytes_read + 2] = test02;
@@ -132,10 +132,12 @@ uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t leng
 
         position_in_file++;
         /* if we reach end of current data block */
-        if (position_in_file >= BLOCK_SIZE) {
-            position_in_file = 0;
+        // we increment position_in_file only once every 4 bytes
+        if (position_in_file >= BLOCK_SIZE/4) {
+            position_in_file = 0;   // reset position in file
             num_data_block++;
             cur_datablock_index = (uint32_t)((inode_t*) i)->data_block_num[num_data_block];
+            cur_datablock = start_datablocks + cur_datablock_index * BLOCK_SIZE/sizeof(uint32_t);
         }
         /* if we reach EOF (each inode can hold up to 1023 data blocks, and its 0-indexed so 0-1022) */
         if (num_data_block > NUM_DATA_BLOCKS - 1) {
