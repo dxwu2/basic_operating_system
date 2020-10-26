@@ -152,13 +152,13 @@ void entry(unsigned long magic, unsigned long addr) {
 
     keyboard_init();
 
-
     /* Enable interrupts */
     /* Do not enable the following until after you have set up your
      * IDT correctly otherwise QEMU will triple fault and simple close
      * without showing you any output */
-    clear();
+    
     // printf("Enabling Interrupts\n");
+    clear();
     sti();
 
 #ifdef RUN_TESTS

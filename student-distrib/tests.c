@@ -3,6 +3,7 @@
 #include "lib.h"
 #include "terminal.h"
 #include "filesystem.h"
+#include "rtc.h"
 
 #define PASS 1
 #define FAIL 0
@@ -344,6 +345,36 @@ void fs_test_read_large_file(){
 	printf("\nfile_name: verylargetextwithverylongname.txt");
 }
 
+
+/* rtc_test
+* Description: tests rtc driver
+* Inputs: None
+* Outputs: None
+* Side Effects: print to screen, open rtc.
+*/
+void rtc_test()
+{
+	int i, j;
+	rtc_open(0);
+ 	for (i = 1; i < 2048; i*=2) {
+		printf("Frequency: %d test:", i);
+ 		for(j = 0; j < 10; j++) {
+ 			rtc_read(0, 0, 0);
+ 			printf("%d ", i);
+ 		}
+ 		if (rtc_write(0, (void*) &i, sizeof(int)) == -1)
+		 	printf("failed");
+ 		printf("\n");
+	}
+ 	rtc_close(0);
+	rtc_open(0);
+	for (i = 0; i < 10; i++){
+		rtc_read(0, 0, 0);
+ 		printf("%d ", i);
+	}
+	rtc_close(0);
+}
+
 /* Checkpoint 3 tests */
 /* Checkpoint 4 tests */
 /* Checkpoint 5 tests */
@@ -361,7 +392,7 @@ void launch_tests(){
 	// terminal_test2();
 	// terminal_test3();
 	// terminal_test4();
-	// TEST_OUTPUT("idt_test", idt_test());
+	// rtc_test();
 	// divide_by_zero_test();
 	// system_call_test();
 	// paging_test1();
