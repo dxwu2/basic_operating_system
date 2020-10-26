@@ -26,6 +26,10 @@ int8_t* strncpy(int8_t* dest, const int8_t*src, uint32_t n);
 
 void test_interrupts(void);
 
+void update_cursor(int x, int y);   // updates cursor
+void backspace(void);               // for erasing most recent char
+void vert_scroll(void);             // for vertical scrolling
+
 /* Userspace address-check functions */
 int32_t bad_userspace_addr(const void* addr, int32_t len);
 int32_t safe_strncpy(int8_t* dest, const int8_t* src, int32_t n);
