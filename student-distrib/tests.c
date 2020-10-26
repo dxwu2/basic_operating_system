@@ -312,11 +312,11 @@ void fs_test_read_executable(){
 	TEST_HEADER;
 
 	uint32_t fd;		// unused here
-	char buffer[1600];	// more than enough
+	char buffer[100000];	// more than enough
 	file_open((uint8_t*)"grep");
-	file_read((uint32_t)&fd, &buffer, 1600);
+	file_read((uint32_t)&fd, &buffer, 100000);
 	int i;
-	for (i = 0; i < 1600; i++) {
+	for (i = 0; i < 100000; i++) {
 		putc(buffer[i]);
 	}
 	printf("\nfile_name: grep");
@@ -333,14 +333,19 @@ void fs_test_read_executable(){
  */
 void fs_test_read_large_file(){
 	TEST_HEADER;
-
+	int test;
 	uint32_t fd;		// unused here
-	char buffer[100000];	// more than enough
+	uint32_t bytes;
+	char buffer[6000];	// more than enough
+
+
 	file_open((uint8_t*)"verylargetextwithverylongname.txt");
-	file_read((uint32_t)&fd, &buffer, 100000);
+	bytes = file_read((uint32_t)&fd, &buffer, 6000);
 	int i;
-	for (i = 0; i < 100000; i++) {
-		printf("%c", buffer[i]);
+	for (i = 0; i < bytes; i++) {
+		// printf("%c", buffer[i]);
+		putc(buffer[i]);
+		test = i;
 	}
 	printf("\nfile_name: verylargetextwithverylongname.txt");
 }
@@ -402,5 +407,5 @@ void launch_tests(){
 	// fs_test_list_files();
 	// fs_test_read_small_file();
 	// fs_test_read_executable();
-	// fs_test_read_large_file();
+	fs_test_read_large_file();
 }
