@@ -183,14 +183,15 @@ void fs_test_list_files(){
 	
 }
 
-/* fs_test_read_file - Tests file_read (and thus, read_data) by printing out contents of a file
+/* fs_test_read_small_file - Tests file_read (and thus, read_data) by printing out contents of a file
+ * works for frame0.txt and frame1.txt (small files)
  * 
  * Inputs	: None
  * Outputs	: None
  * Coverage	: file_read and read_data
  * Side Effects	: prints out the contents of the specified file
  */
-void fs_test_read_file(){
+void fs_test_read_small_file(){
 	TEST_HEADER;
 
 	uint32_t fd;		// unused here
@@ -202,6 +203,50 @@ void fs_test_read_file(){
 		printf("%c", buffer[i]);
 	}
 	printf("\nfile_name: frame0.txt");
+}
+
+/* fs_test_read_executable - Tests file_read (and thus, read_data) by printing out contents of an executable
+ * works for grep and ls (executables)
+ * 
+ * Inputs	: None
+ * Outputs	: None
+ * Coverage	: file_read and read_data
+ * Side Effects	: prints out the contents of the specified file
+ */
+void fs_test_read_executable(){
+	TEST_HEADER;
+
+	uint32_t fd;		// unused here
+	char buffer[1600];	// more than enough
+	file_open((uint8_t*)"grep");
+	file_read((uint32_t)&fd, &buffer, 1600);
+	int i;
+	for (i = 0; i < 1600; i++) {
+		putc(buffer[i]);
+	}
+	printf("\nfile_name: grep");
+}
+
+/* fs_test_read_large_file - Tests file_read (and thus, read_data) by printing out contents of a file
+ * works for  verylargetextwithverylongname.tx(t) (large files)
+ * 
+ * Inputs	: None
+ * Outputs	: None
+ * Coverage	: file_read and read_data
+ * Side Effects	: prints out the contents of the specified file
+ */
+void fs_test_read_large_file(){
+	TEST_HEADER;
+
+	uint32_t fd;		// unused here
+	char buffer[100000];	// more than enough
+	file_open((uint8_t*)"verylargetextwithverylongname.txt");
+	file_read((uint32_t)&fd, &buffer, 100000);
+	int i;
+	for (i = 0; i < 100000; i++) {
+		printf("%c", buffer[i]);
+	}
+	printf("\nfile_name: verylargetextwithverylongname.txt");
 }
 
 /* Checkpoint 3 tests */
@@ -224,6 +269,8 @@ void launch_tests(){
 	// null_test();
 	// TEST_OUTPUT("fs_test_1", fs_test_1());
 	// TEST_OUTPUT("fs_test_2", fs_test_2());
-	fs_test_list_files();
-	// fs_test_read_file();
+	// fs_test_list_files();
+	// fs_test_read_small_file();
+	fs_test_read_executable();
+	// fs_test_read_large_file();
 }
