@@ -93,10 +93,14 @@ void system_call_test(){
  * Outputs	:	None
  * Side Effects	:	Freeze the kernel
  */
-// void paging_test(){
-// 	TEST_HEADER;
 
-// 	int * ptr = (*int) (0xB8000);
+void paging_test(){
+	TEST_HEADER;
+
+	int * ptr = (int*) (0xB8000);
+	int a;
+	a = *(ptr);
+}
 
 
 /* Tests if Page Fault Exception fired on dereferencing null ptr
@@ -127,11 +131,6 @@ int fs_test_1(){
 
 	dentry_t test_dentry;
 	read_dentry_by_name("frame0.txt", &test_dentry);
-	// unsigned i;
-	// char fname[11];
-	// for(i = 0; i < 11; i++){
-	// 	fname[i] = (char) test_dentry.filename[i];
-	// }
 	if(strncmp(test_dentry.filename, "frame0.txt", 10) != 0)
 		return FAIL;
 	/* "frame0.txt" should correspond to inode 38 and filetype 2*/
@@ -180,8 +179,8 @@ void fs_test_list_files(){
 		dir_read(i, &cur_dentry, 64);
 		uint32_t inode_idx = cur_dentry.inode_num;
 		inode_t* inode_addr = filesystem_start + (4096 * (inode_idx+1)); //calculate inode struct addr using inode number and start addr of filesystem
-		if(cur_dentry.filename > FILENAME_LEN)
-        strncpy(cur_dentry.filename, cur_dentry.filename, 32);
+		// if(cur_dentry.filename > FILENAME_LEN)
+        // strncpy(cur_dentry.filename, cur_dentry.filename, 32);
 		printf("file_name: %s, file_type: %d, file_size: %d\n", cur_dentry.filename, cur_dentry.filetype, inode_addr->length);
 	}
 	
@@ -197,23 +196,15 @@ void fs_test_list_files(){
 void fs_test_read_file(){
 	TEST_HEADER;
 
-	uint32_t fd;	// unused
+	uint32_t fd;		// unused here
 	char buffer[1600];	// more than enough
-	file_open("frame0.txt");
-	file_read(&fd, &buffer, 1600);
+	file_open((uint8_t*)"frame0.txt");
+	file_read((uint32_t)&fd, &buffer, 1600);
 	int i;
-	for (i = 0; i < 24 * 12; i++) {
-		if (i == 120) {
-			int a = 0;
-		}
+	for (i = 0; i < 1600; i++) {
 		printf("%c", buffer[i]);
-		/*
-		if (i % 24 == 23) {
-			printf("\n");
-		}
-		*/
 	}
-	printf("\nfile_name: frame0.txt");
+	printf("\nfile_name: frame1.txt");
 }
 
 /* Checkpoint 3 tests */
