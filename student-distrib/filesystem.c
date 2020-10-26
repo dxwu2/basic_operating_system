@@ -49,6 +49,13 @@ uint32_t read_dentry_by_name (const int8_t* fname, dentry_t* dentry){
         dentry_t* potential_dentry = &(the_boot_block->direntries[i]);
         if(!strncmp(fname, potential_dentry->filename, fname_len)){
             *dentry = *potential_dentry;
+            /* Account for fname buffers over 32 chars by setting all characters to '/0' starting at index 32 */\
+            fname_len = strlen(dentry->filename);
+	        if(fname_len > FILENAME_LEN){
+                for(i = FILENAME_LEN; i < fname_len; i++){
+                    dentry->filename[i] = '\0';
+                }
+	        }
             return 0;
         }
     }
@@ -69,6 +76,14 @@ uint32_t read_dentry_by_index (uint32_t index, dentry_t* dentry){
         return -1;
     /* Set dentry based on index otherwise */
     *dentry = the_boot_block->direntries[index];
+    /* Account for fname buffers over 32 chars by setting all characters to '/0' starting at index 32 */
+    int i;
+    int fname_len = strlen(dentry->filename);
+	if(fname_len > FILENAME_LEN){
+		for(i = FILENAME_LEN; i < fname_len; i++){
+			dentry->filename[i] = '\0';
+		}
+	}
     return 0;
 }
 

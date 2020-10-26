@@ -152,8 +152,7 @@ int fs_test_2(){
 	TEST_HEADER;
 
 	dentry_t test_dentry;
-	read_dentry_by_index(11, &test_dentry);
-	printf("filename: %s", test_dentry.filename);
+	read_dentry_by_index(7, &test_dentry);
 	if(strncmp(test_dentry.filename, "counter", 7) != 0)
 		return FAIL;
 	if(test_dentry.inode_num != 42 || test_dentry.filetype != 2)
@@ -163,11 +162,11 @@ int fs_test_2(){
 	
 }
 
-/* fs_test_list_files - Tests dir_read (and therefore, read_dentry_by_name) by printing out all the files
+/* fs_test_list_files - Tests dir_read (and therefore, read_dentry_by_index) by printing out all the files
  * 
  * Inputs	: None
  * Outputs	: None
- * Coverage	: dir_read and read_dentry_by_name
+ * Coverage	: dir_read and read_dentry_by_index
  * Side Effects	: lists out all files (check discord general chat for what it should look like)
  */
 void fs_test_list_files(){
@@ -179,8 +178,6 @@ void fs_test_list_files(){
 		dir_read(i, &cur_dentry, 64);
 		uint32_t inode_idx = cur_dentry.inode_num;
 		inode_t* inode_addr = filesystem_start + (4096 * (inode_idx+1)); //calculate inode struct addr using inode number and start addr of filesystem
-		// if(cur_dentry.filename > FILENAME_LEN)
-        // strncpy(cur_dentry.filename, cur_dentry.filename, 32);
 		printf("file_name: %s, file_type: %d, file_size: %d\n", cur_dentry.filename, cur_dentry.filetype, inode_addr->length);
 	}
 	
@@ -204,7 +201,7 @@ void fs_test_read_file(){
 	for (i = 0; i < 1600; i++) {
 		printf("%c", buffer[i]);
 	}
-	printf("\nfile_name: frame1.txt");
+	printf("\nfile_name: frame0.txt");
 }
 
 /* Checkpoint 3 tests */
