@@ -30,6 +30,7 @@ void rtc_init(){
     outb(SREG_C, IDX_PORT);	// select register C
     inb(DATA_PORT);		//throw away contents
     enable_irq(8);  //enable irq on pin 8 (first pin on slave)
+    
     return;
 }
 
@@ -108,6 +109,7 @@ int set_rtcFrequency (int frequency) {
         return -1;
 
     // determine frequency by powers of 2
+    // rate starts at 15, decrement for every power of 2
     if (frequency == 2)
 	    rate = 0x0F;
 	if (frequency == 4)
@@ -130,10 +132,12 @@ int set_rtcFrequency (int frequency) {
 		rate = 0x06;
 
     cli();
+    
 	outb(SREG_A, IDX_PORT);  //select regA
 	char a_val = inb(DATA_PORT); //hold the value of reg A
 	outb(SREG_A, IDX_PORT); //select regA again
-	outb((a_val & 0xF0) | rate, DATA_PORT); //set rate
+	outb((a_val & 0xF0) | rate, DATA_PORT); //set rate (high 4 bits are value of reg A, low 4 are the rate)
+
 	sti();
 
     return 0;
