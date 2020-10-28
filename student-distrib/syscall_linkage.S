@@ -13,7 +13,7 @@ SYSTEM_CALL_WRAPPER:
 
     cmpl $1, %eax   # check system call index is between 1 and 8 (for 8 system calls total) 
     jb invalid_idx
-    cmpl $8 %eax
+    cmpl $8, %eax
     ja invalid_idx
 
     call *jump_table(, %eax, 4) # call corresponding system call from jump table
