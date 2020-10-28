@@ -4,24 +4,6 @@
 .globl  COPROC_SEG_OVERRUN_EXCEP, INVALID_TSS_EXCEP, SEG_NOT_PRESENT_EXCEP, STACK_SEG_FAULT_EXCEP, GENERAL_PROTECTION_EXCEP, PAGE_FAULT_EXCEP, FPU_FLOAT_ERR_EXCEP
 .globl  ALIGN_CHECK_EXCEP, MACHINE_CHECK_EXCEP, SIMD_FLOAT_ERR_EXCEP
 
-.globl  SYSTEM_CALL
-
-# SYSTEM_CALL(void);
-# Assembly linkage for system call handler triggered by "int 0x80"
-# Inputs   : none
-# Outputs  : none
-SYSTEM_CALL:
-        cli         # begin critical section
-        pushal      # pushing all registers
-        pushfl      # pushing all flags
-
-        call system_call
-
-        popfl       # popping all flags
-        popal       # popping all registers
-        sti         # end critical section
-        iret        # per osdev, need iret since interrupt context
-
 # All functions included below are simply assembly linkage functions that call corresponding handlers in exceptions.c/h
 # I have only included a header for exception #0 as it should be obvious that each function performs the same thing
 
