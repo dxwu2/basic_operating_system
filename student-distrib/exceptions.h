@@ -33,7 +33,4 @@ void align_check_excep();
 void machine_check_excep();
 void simd_float_err_excep();
 
-/* System call handler declaration */
-void system_call();
 #endif
-

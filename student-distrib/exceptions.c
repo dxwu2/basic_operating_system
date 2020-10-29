@@ -34,19 +34,7 @@ const char* exception_msgs[20] = {
  */
 void handle_exception(unsigned vec){
     clear();
-    printf(" Interrupt vector 0x%x -- %s\n", vec, exception_msgs[vec]);
-    while(1);
-}
-
-/* void handle_system_call()
- * Temporary system call handler 
- * Inputs: None
- * Outputs: None
- * Side Effects: Prints "System call was called."
- */
-void handle_system_call(){
-    clear();
-    printf(" System call (vector 0x80) was called.\n");
+    printf("Interrupt vector 0x%x -- %s\n", vec, exception_msgs[vec]);
     while(1);
 }
 

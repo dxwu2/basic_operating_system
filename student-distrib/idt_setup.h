@@ -32,6 +32,6 @@ void KEYBOARD_INTERRUPT(void);
 void RTC_INTERRUPT(void);
 
 //for assembly linkage for system calls
-void SYSTEM_CALL(void);
+void SYSTEM_CALL_WRAPPER(void);
 
 #endif
