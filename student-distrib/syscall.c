@@ -70,7 +70,7 @@ int32_t sys_execute (const uint8_t* command){
 
     // now check if executable file
     // magic numbers from https://wiki.osdev.org/ELF (0x7F, E, L, F) -> bits 0 to 3
-    if(read_buf[0] != '0x7F' || read_buf[1] != 'E' || read_buf[2] != 'L' || read_buf[3] != 'F'){
+    if(read_buf[0] != 0x7F || read_buf[1] != 'E' || read_buf[2] != 'L' || read_buf[3] != 'F'){
         return -1;      // return -1 since magic numbers dont match what ELF should be
     }
 
