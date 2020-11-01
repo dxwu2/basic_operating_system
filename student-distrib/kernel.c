@@ -13,7 +13,7 @@
 #include "rtc.h"
 #include "filesystem.h"
 #include "types.h"
-#define RUN_TESTS
+//#define RUN_TESTS
 
 /* Macros. */
 /* Check if the bit BIT in FLAGS is set. */
@@ -153,6 +153,8 @@ void entry(unsigned long magic, unsigned long addr) {
     rtc_init();
 
     keyboard_init();
+
+    syscall_init();
 
     /* Enable interrupts */
     /* Do not enable the following until after you have set up your
