@@ -9,12 +9,15 @@
 #define UNUSED          0   // for pid_array
 #define USED            1   // for pid_array
 
+#define MAX_CMD_LENGTH 10                           // looking online, linux commands don't go too high
+#define MAX_ARGS_LENGTH 127 - MAX_CMD_LENGTH        // keyboard buffer at most 127 char, subtract 10 for command
+
 /* System call handler declaration */
 void system_call();
 
 /* Actual system call handlers (CP3) */
 int32_t sys_halt (uint8_t status);
-int32_t sys_execute (const uint8_t command);
+int32_t sys_execute (const uint8_t* command);
 int32_t sys_read (int32_t fd, void* buf, int32_t nbytes);
 int32_t sys_write (int32_t fd, void* buf, int32_t nbytes);
 int32_t sys_open (const uint8_t* filename);

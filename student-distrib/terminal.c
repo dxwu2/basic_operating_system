@@ -30,6 +30,10 @@ int32_t terminal_close(int32_t fd){
 int32_t terminal_read(int32_t fd, void* buf, int32_t nbytes){
     int bytes;
 
+    if(nbytes <= 0 || buf == NULL){
+        return -1;
+    }
+
     // wait until '\n' is pressed
     while(!flag);
 
@@ -53,10 +57,14 @@ int32_t terminal_read(int32_t fd, void* buf, int32_t nbytes){
  * Function: Writes n bytes from buf to screen */
 int32_t terminal_write(int32_t fd, const void* buf, int32_t nbytes){
     int i;      // for looping
+    int bytes;
 
     if(nbytes <= 0 || buf == NULL){
         return -1;
     }
+
+    // bytes should be the minimum between keyboard buffer length and nbytes to read
+    bytes = (strlen((char*)buf) < nbytes) ? strlen((char*)buf) : nbytes;
 
     for(i = 0; i < nbytes; i++){
         char letter = ((char*)buf)[i];      // converting void pointer to char pointer -> need to index by array (ea char = 1 byte)
