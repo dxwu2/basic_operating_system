@@ -3,12 +3,14 @@
 #include "filesystem.h"
 #include "terminal.h"
 #include "rtc.h"
+#include "x86_desc.h"
 
 // initialize the file operations table 
-fops_t std_in_t = {bad_call, terminal_read, bad_call, bad_call};
-fops_t std_out_t = {bad_call, bad_call, terminal_write, bad_call};
-fops_t rtc_t = {rtc_open, rtc_read, rtc_write, rtc_close};
-fops_t filesys_t = {file_open, file_read, file_write, file_close};
+fops_t std_in_table = {bad_call, terminal_read, bad_call, bad_call};
+fops_t std_out_table = {bad_call, bad_call, terminal_write, bad_call};
+fops_t rtc_table = {rtc_open, rtc_read, rtc_write, rtc_close};
+fops_t filesys_table = {file_open, file_read, file_write, file_close};
+fops_t bad_table = {bad_call, bad_call, bad_call, bad_call};
 
 
 /* void handle_system_call()
@@ -48,6 +50,7 @@ int32_t sys_halt (uint8_t status){
 int32_t sys_execute (const uint8_t* command){
 
     // STEP 1: parse the command
+
     if(command == NULL){
         return -1;
     }
@@ -95,7 +98,9 @@ int32_t sys_execute (const uint8_t* command){
     read_data(inode_idx, 24, read_buf, 4);              // read 4 bc only 4 bits to read
     uint32_t* entry_position = (uint32_t*)read_buf;     // make this a uint32_t pointer?
 
+
     // STEP 3: Paging
+
     // find an unused pid (0-5)
     int pid;
     for (pid = 0; pid < MAX_NUM_PIDS; pid++) {
@@ -119,13 +124,61 @@ int32_t sys_execute (const uint8_t* command){
     // already have entry position from step 2
 
     // STEP 5: PCB
+
     // helper function to make/initialize a PCB
     pcb_t* curr_pcb;
     init_pcb(curr_pcb, pid, args);
 
-    // call this helper function to set up PCB for shell (for now)
+    // save current EBP and ESP registers into PCB before we change
+    asm volatile(
+        // literally save ebp and esp into (free to clobber) registers
+        "movl %%esp, %%eax;"
+        "movl %%ebp, %%ecx;"
+        
+        : // no inputs
+        : "r" (curr_pcb->old_esp), "r" (curr_pcb->old_ebp)        // bro is this how we read registers im losing my minddddddd
+        : // fine to clobber
+    );
 
-    // call this helper function whenever new executable is run
+    // STEP 6: Context Switch - home stretch ?
+    
+    // ay so i think I cracked it - we just dont do this checkpoint
+    // nah fuck that we read manuals and shit
+    /*  steps to glory (per OSDEV - https://wiki.osdev.org/Task_State_Segment)
+            SS0 = kernel datasegment 
+            ESP0 (kernel esp) = stack-pointer 
+    */
+
+    // fucking big brain moves at 2:57am
+
+    // prepare for context switch
+    tss.ss0 = KERNEL_DS;                        // if OSDEV tells you to jump off a cliff, would you do it? of course yes OSDEV legit
+    tss.esp0 = curr_pcb->base_kernel_stack;     // already calculated, fucking genius
+
+    // push IRET context to stack
+    // now its asm volatile time, this is where boys become men
+    // OSDEV to save us? https://wiki.osdev.org/Getting_to_Ring_3
+
+    // need to do a tss_flush, then enter ring 3 ?
+    // ***yo this is wrong ignore - we will need to do pair programming for this (but fortunately this is the last step)
+
+    asm volatile(
+        "mov $0x2B, %%ax;"      // load 0x2B into task state register
+        "mov %%ax, %%;"
+
+        "mov $0x23, %%ax;"
+        "mov %%ax, %%ds;"
+        "mov %%ax, %%es;"
+        "mov %%ax, %%fs;"
+        "mov %%ax, %%gs;"
+
+        "movl "
+        "iret;"     // iret has to happen somewhere bro i do not know
+        
+        : // no inputs
+        : // there is an output but halt handles this
+        : // fine to clobber
+    );
 
     return 0;
 }
@@ -142,6 +195,8 @@ int32_t sys_write (int32_t fd, void* buf, int32_t nbytes){
 
 
 int32_t sys_open (const uint8_t* filename){
+    // need to return -1 if (File Descriptor) array is full - see appendix A 8.2 last sentence 
+    // (let us know if ur confused how to access fda)
     return 0;
 }
 
@@ -188,7 +243,28 @@ int32_t bad_call(void){
  * Side Effects: ?
  */
 void init_pcb(pcb_t* curr_pcb, int pid, uint8_t* args){
+    // initialize all entires to be bad at first
+    int i;
+    for(i = 0; i < FDA_SIZE; i++){
+        curr_pcb->fda[i].fops_ptr = bad_table;
+        curr_pcb->fda[i].inode = -1;
+        curr_pcb->fda[i].flags = NOT_IN_USE;
+        curr_pcb->parent_pcb = NULL;
+        curr_pcb->child_pcb = NULL;
+    }
+
+    // initialize first two entries of fda to STDIN and STDOUT
+    curr_pcb->fda[0].fops_ptr = std_in_table;
+    // curr_pcb->fda[0].tss.esp0inode = -1;                 // stdin should not have inode
+    curr_pcb->fda[0].flags = IN_USE;
+    curr_pcb->fda[1].fops_ptr = std_out_table;
+    // curr_pcb->fda[1].inode = -1;                 // stdout should not have inode
+    curr_pcb->fda[1].flags = IN_USE;
+
+    // curr_pcb->old_esp = ;
+    // curr_pcb->old_ebp = tss.eb
+
     // set base kernel stack (depends on the pid)
-    curr_pcb->base_kernel_stack = 0x800000 - pid * 0x2000;
+    curr_pcb->base_kernel_stack = 0x800000 - (pid+1) * 0x2000;      // 8MB - (pid+1)*8kB
 }
 

@@ -14,6 +14,10 @@
 
 #define FDA_SIZE        8   // 2 are for stdin and stdout, other 6 are for open files
 
+// for flags in fda elements
+#define IN_USE  1
+#define NOT_IN_USE  0
+
 /* System call handler declaration */
 void system_call();
 
@@ -48,7 +52,7 @@ typedef struct files {
     uint32_t inode;             // inode corresponding to the file
     uint32_t file_position;     // keeps track of where the user is currently reading from in the file. 
                                 // Every read system all should update this member
-    uint32_t flags;             // marking this file descriptor as "in-use" (check Appendix A)
+    uint32_t flags;             // marking this file descriptor as "in-use" (check Appendix A): 1 is in use, 0 is not in use
 } files_t;
 
 
