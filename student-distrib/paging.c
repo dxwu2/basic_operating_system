@@ -95,3 +95,22 @@ void flush_tlb(void) {
     );
     return;
 }
+
+/* void map_user_program()
+ * 
+ * Inputs   : pid
+ * Outputs  : none
+ * Side Effects : maps the user program from 128MB - 132MB in virtual memory to either 8MB-12MB, 12MB-16MB, etc. in physical memory
+ *                if pid == 0, then map to 8-12MB; if pid == 1, then map to 12-16MB, etc.
+ * 
+ */
+void map_user_program(int pid) {
+    /* mapping */
+    // index 32 because user program starts at 128MB in virtual memory and each "index" chunk is 4MB. 128MB/4MB => 32
+    page_directory[32].P = 1;   // mark as present
+    // might need to set more bits?
+    page_directory[32].offset31_12 = (pid + 2) * FOUR_MB_OFFSET;    // we add 2 because the first 0-8MB are taken up already
+
+    /* flush the tlb */
+    flush_tlb();
+}

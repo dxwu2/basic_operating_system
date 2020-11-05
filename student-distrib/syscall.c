@@ -15,11 +15,19 @@ void handle_system_call(){
     while(1);
 }
 
-
-int32_t sys_halt (uint8_t status){
-    return 0;
+/* set up structures and local variables used in passing in parameters for system calls */
+void syscall_init() {
+    int i;
+    for (i = 0; i < MAX_NUM_PIDS; i++) {
+        pid_array[i] = UNUSED;
+    }
 }
 
+int32_t sys_halt (uint8_t status){
+    // REMEMBER TO SET PID TO UNUSED
+    return 0;
+}
+    
 
 /* int32_t sys_execute (const uint8_t command)
  * Attempts to load and execute a new program -> handing off the processor to the new program until it terminates
@@ -77,9 +85,32 @@ int32_t sys_execute (const uint8_t* command){
     // now obtain program entry position (bits 24-27) - also 4 bits so we can overwrite read_buf
     // offset should be 24 since we need to start looking at 24 (we originally start from 0)
     read_data(inode_idx, 24, read_buf, 4);              // read 4 bc only 4 bits to read
-    uint32_t* entry_position = (uint32_t*)read_buf;     // make this a pointer?
+    uint32_t* entry_position = (uint32_t*)read_buf;     // make this a uint32_t pointer?
 
-    
+    // STEP 3: Paging
+    // find an unused pid (0-5)
+    int pid;
+    for (pid = 0; pid < MAX_NUM_PIDS; pid++) {
+        if (pid_array[pid] == UNUSED) {
+            pid_array[pid] = USED;
+            break;
+        }
+        // if pid_array is full
+        if (pid == MAX_NUM_PIDS - 1) {
+            return -1;
+        }
+    }
+    // map user program
+    map_user_program(pid);
+
+    // STEP 4: user level program loader
+    uint8_t* usr_buf = (uint8_t*)0x8048000;                 // memory 
+    uint32_t exe_length = ((inode_t*)(fs_start_addr + (inode_idx + 1) * BLOCK_SIZE))->length;       // get length
+    read_data(inode_idx, 0, usr_buf, exe_length);       // load data into usr_buf
+                                                        // offset of 0 since we want to read in from byte 0 (start of executable)
+    // already have entry position from step 2
+
+    // STEP 5: PCB
 
     return 0;
 }

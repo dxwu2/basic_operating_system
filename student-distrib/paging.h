@@ -13,6 +13,8 @@
 #define ADDRESS_SHIFT_KB    12          // only need top 20 bits (so shift right 12) to find where 4kB pages are
 #define ADDRESS_SHIFT_MB    22          // only need top 10 bits (so shift right 22) to find where 4MB pages are
 
+#define FOUR_MB_OFFSET      1024        // 4MB has a difference of 1024 when right shifted by 12 (used in map_user_prog)
+
 /* struct for Page Directory Entries */
 typedef struct pde {
     /* using union and struct here gives us the option to use both between 4MB and 4kB pages */
@@ -56,3 +58,4 @@ pde_t page_directory[NUM_ENTRIES] __attribute__((aligned (PAGING_ALIGNMENT)));
 /* functions in paging.c */
 void init_paging(void);
 extern void flush_tlb(void);
+void map_user_program(int pid);
