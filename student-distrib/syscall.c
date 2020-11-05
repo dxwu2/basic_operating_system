@@ -79,8 +79,7 @@ int32_t sys_execute (const uint8_t* command){
     read_data(inode_idx, 24, read_buf, 4);              // read 4 bc only 4 bits to read
     uint32_t* entry_position = (uint32_t*)read_buf;     // make this a pointer?
 
-
-    // STEP 3: Paging
+    
 
     return 0;
 }
