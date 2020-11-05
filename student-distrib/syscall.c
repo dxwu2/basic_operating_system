@@ -10,6 +10,7 @@ fops_t std_in_table = {bad_call, terminal_read, bad_call, bad_call};
 fops_t std_out_table = {bad_call, bad_call, terminal_write, bad_call};
 fops_t rtc_table = {rtc_open, rtc_read, rtc_write, rtc_close};
 fops_t filesys_table = {file_open, file_read, file_write, file_close};
+fops_t filedir_table = {dir_open, dir_read, dir_write, dir_close};
 fops_t bad_table = {bad_call, bad_call, bad_call, bad_call};
 
 
@@ -185,23 +186,96 @@ int32_t sys_execute (const uint8_t* command){
 
 
 int32_t sys_read (int32_t fd, void* buf, int32_t nbytes){
+    //I need access to curr_pcb
+    pcb_t* curr_pcb;
+    /* Check bounds of fd idx */
+    if (fd < 0 || fd >= FDA_SIZE)
+        return -1;
+    /* Check valid buf input */
+    if (buf == NULL)
+        return -1;
+    /* Check if fd index corresponds to valid fd */
+    if (curr_pcb->fda[fd].flags == NOT_IN_USE)
+        return -1;
+
+    curr_pcb->fda[fd].fops_ptr.read(fd, buf, nbytes);
     return 0;
 }
 
 
 int32_t sys_write (int32_t fd, void* buf, int32_t nbytes){
+    //I need access to curr_pcb
+    pcb_t* curr_pcb;
+    /* Check bounds of fd idx */
+    if (fd < 0 || fd >= FDA_SIZE)
+        return -1;
+    /* Check valid buf input */
+    if (buf == NULL)
+        return -1;
+    /* Check if fd index corresponds to valid fd */
+    if (curr_pcb->fda[fd].flags == NOT_IN_USE)
+        return -1;
+
+    curr_pcb->fda[fd].fops_ptr.write(fd, buf, nbytes);
     return 0;
 }
 
 
 int32_t sys_open (const uint8_t* filename){
     // need to return -1 if (File Descriptor) array is full - see appendix A 8.2 last sentence 
-    // (let us know if ur confused how to access fda)
-    return 0;
+    //I need access to curr_pcb
+    pcb_t* curr_pcb;
+    dentry_t test_dentry;
+    /*Check if named file exists*/
+    if(read_dentry_by_name(filename, &test_dentry) == -1)
+        return -1;
+    /*Check if any fd entries are free*/
+    int32_t fd_idx;
+    for(fd_idx = 2; fd_idx < FDA_SIZE; fd_idx++){
+        /* Check for empty fda entry */
+        if(curr_pcb->fda[fd_idx].flags == NOT_IN_USE)
+            break;
+        if (fd_idx == FDA_SIZE - 1)
+            return -1;   
+    }
+    /* Declare and initialize file descriptor to be placed in fda */
+    files_t fd_entry;
+    switch (test_dentry.filetype){
+        case 0:     //RTC filetype
+            fd_entry.fops_ptr = rtc_table;
+            break;
+        case 1:     //Directory filetype
+            fd_entry.fops_ptr = filedir_table;
+            break;
+        case 2:     //Traditional file filetype
+            fd_entry.fops_ptr = filesys_table;
+            break;
+    }
+    /* Set up remaining fields for our fda entry */
+    fd_entry.inode = test_dentry.inode_num;
+    fd_entry.file_position = 0;
+    fd_entry.flags = IN_USE;
+
+    /* Finally set entry in fda for curr_pcb */
+    curr_pcb->fda[fd_idx] = fd_entry;
+    return fd_idx;
 }
 
 
 int32_t sys_close (int32_t fd){
+    //Still need curr_pcb access
+    pcb_t* curr_pcb;
+    /* Check bounds of fd idx (must be between 2 and 7)*/
+    if (fd < 2 || fd >= FDA_SIZE)
+        return -1;
+    /* Check if fd already invalid */
+    if (curr_pcb->fda[fd].flags == NOT_IN_USE)
+        return -1;
+    /* Make sure file closes successfully */
+    if(curr_pcb->fda[fd].fops_ptr.close(fd) != 0)
+        return -1;
+    /* Finally set fd entry to not in use */
+    curr_pcb->fda[fd].flags = NOT_IN_USE;
     return 0;
 }
 
