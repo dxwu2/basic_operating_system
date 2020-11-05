@@ -2,6 +2,8 @@
 #include "syscall.h"
 #include "filesystem.h"
 #include "terminal.h"
+#include "filesystem.h"
+
 
 /* void handle_system_call()
  * Temporary system call handler 
@@ -104,7 +106,9 @@ int32_t sys_execute (const uint8_t* command){
     // map user program
     map_user_program(pid);
 
-    // STEP 4: user level program loader
+    // STEP 4: load the user program
+    uint8_t* buf_usr_prog[8192];
+    read_data(inode_idx, 0, buf_usr_prog, length);
 
     return 0;
 }
