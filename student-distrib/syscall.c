@@ -2,6 +2,14 @@
 #include "syscall.h"
 #include "filesystem.h"
 #include "terminal.h"
+#include "rtc.h"
+
+// initialize the file operations table 
+fops_t std_in_t = {bad_call, terminal_read, bad_call, bad_call};
+fops_t std_out_t = {bad_call, bad_call, terminal_write, bad_call};
+fops_t rtc_t = {rtc_open, rtc_read, rtc_write, rtc_close};
+fops_t filesys_t = {file_open, file_read, file_write, file_close};
+
 
 /* void handle_system_call()
  * Temporary system call handler 
@@ -111,6 +119,13 @@ int32_t sys_execute (const uint8_t* command){
     // already have entry position from step 2
 
     // STEP 5: PCB
+    // helper function to make/initialize a PCB
+    pcb_t* curr_pcb;
+    init_pcb(curr_pcb, pid, args);
+
+    // call this helper function to set up PCB for shell (for now)
+
+    // call this helper function whenever new executable is run
 
     return 0;
 }
@@ -152,3 +167,28 @@ int32_t sys_getargs (uint8_t* buf, int32_t nbytes){
 int32_t sys_vidmap (uint8_t** screen_start){
     return 0;
 }
+
+
+/* int32_t bad_call(void)
+ * Is a bad call function because function pointer does not exist
+ * Inputs: none
+ * Outputs: -1 by default since bad call
+ * Side Effects: none
+ */
+int32_t bad_call(void){
+    return -1;
+}
+
+/* void init_pcb(void)
+ * Initializes a given pcb for use
+ * Inputs:  pcb_t curr_pcb - pcb to initialize
+ *          int pid - identify the process
+ *          args - keep track of the arguments saved
+ * Outputs: none
+ * Side Effects: ?
+ */
+void init_pcb(pcb_t* curr_pcb, int pid, uint8_t* args){
+    // set base kernel stack (depends on the pid)
+    curr_pcb->base_kernel_stack = 0x800000 - pid * 0x2000;
+}
+
