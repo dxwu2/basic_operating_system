@@ -470,5 +470,5 @@ void launch_tests(){
 	// fs_test_list_files();
 	// fs_test_read_small_file();
 	// fs_test_read_executable();
-	fs_test_read_large_file();
+	// fs_test_read_large_file();
 }

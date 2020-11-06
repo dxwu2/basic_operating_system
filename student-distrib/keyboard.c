@@ -259,4 +259,5 @@ void keyboard_return(void){
     
     // tell terminal driver that '\n' was pressed
     flag = 1;
+    // clear_keyboard_buf();       // need to clear the buffer at the end
 }
