@@ -3,7 +3,6 @@
 #include "filesystem.h"
 #include "terminal.h"
 #include "rtc.h"
-#include "x86_desc.h"
 
 // initialize the file operations table 
 fops_t std_in_table = {bad_call, terminal_read, bad_call, bad_call};
@@ -12,6 +11,9 @@ fops_t rtc_table = {rtc_open, rtc_read, rtc_write, rtc_close};
 fops_t filesys_table = {file_open, file_read, file_write, file_close};
 fops_t filedir_table = {dir_open, dir_read, dir_write, dir_close};
 fops_t bad_table = {bad_call, bad_call, bad_call, bad_call};
+
+/* local variables */
+static int pid_array[MAX_NUM_PIDS];
 
 
 /* void handle_system_call()
@@ -34,8 +36,43 @@ void syscall_init() {
     }
 }
 
+
+
 int32_t sys_halt (uint8_t status){
-    // REMEMBER TO SET PID TO UNUSED
+    // call sti since we called cli in execute
+
+    pcb_t* curr_pcb = get_pcb_ptr();
+
+    // Set pids to unused
+    int i;
+    // we start at 2 because of stdin and stdout
+    for (i = 2; i < FDA_SIZE; i++) {
+        curr_pcb->fda[i].flags = NOT_IN_USE;
+    }
+
+    // restore parent paging
+    // pcb_t* parent_pcb = curr_pcb->parent_pcb;
+    map_user_program(curr_pcb->parent_pid);
+
+    // close any relevant FDs
+    // STILL NEED TO DO?
+    
+    // restore tss values and EBP/ESP values
+    tss.esp0 = curr_pcb->old_esp;
+
+    asm volatile(
+        // literally save ebp and esp into (free to clobber) registers
+        "movl %0, %%esp;"
+        "movl %1, %%ebp;"
+        "movl %2, %%eax;"
+        "jmp RETURN_FROM_HALT;"
+        
+        : // no outputs
+        : "r"(curr_pcb->old_esp), "r"(curr_pcb->old_ebp), "r"((uint32_t)status)       // we booling now
+        : "%eax"
+    );
+
+    // remember to go back to end of execute and set the return value accordingly (always returns 0 right now)
     return 0;
 }
     
@@ -45,7 +82,7 @@ int32_t sys_halt (uint8_t status){
  * Inputs: uint8_t command - reads command to know what to do
  * Outputs: -1 if command cannot be executed
  *          256 if program dies by an exception
- *          [0,255] if porgam executes a halt syscall (value returned given by call to halt)
+ *          [0,255] if program executes a halt syscall (value returned given by call to halt)
  * Side Effects: Does a lot of stuff
  */
 int32_t sys_execute (const uint8_t* command){
@@ -56,7 +93,7 @@ int32_t sys_execute (const uint8_t* command){
         return -1;
     }
 
-    uint8_t cmd[MAX_CMD_LENGTH];            // get first command
+    int8_t cmd[MAX_CMD_LENGTH];            // get first command
     uint8_t args[MAX_ARGS_LENGTH];          // get following arguments
     uint8_t idx;                            // to identify spaces (also to index cmd)
     uint8_t args_idx;                       // to index args
@@ -80,11 +117,11 @@ int32_t sys_execute (const uint8_t* command){
     // each process points to a dentry object (which points to inode object)
     dentry_t d;
 	if(read_dentry_by_name(cmd, &d) == -1){
-        return -1;      // return -1 since dentry does not exist
+        return -1;                              // return -1 since dentry does not exist
     }
 
     // read header (found at start of ELF file)
-    uint8_t* read_buf[4];                               // only need 4 because of the magic numbers
+    uint8_t read_buf[4];                               // only need 4 because of the magic numbers
     uint32_t inode_idx = d.inode_num;                   // get inode from read_dentry
     read_data(inode_idx, 0, read_buf, 4);               // again, only 4 magic numbers, read into read_buf
 
@@ -97,7 +134,7 @@ int32_t sys_execute (const uint8_t* command){
     // now obtain program entry position (bits 24-27) - also 4 bits so we can overwrite read_buf
     // offset should be 24 since we need to start looking at 24 (we originally start from 0)
     read_data(inode_idx, 24, read_buf, 4);              // read 4 bc only 4 bits to read
-    uint32_t* entry_position = (uint32_t*)read_buf;     // make this a uint32_t pointer?
+    uint32_t* entry_position = (uint32_t*)read_buf;     // make this a uint32_t pointer
 
 
     // STEP 3: Paging
@@ -130,57 +167,72 @@ int32_t sys_execute (const uint8_t* command){
     pcb_t* curr_pcb;
     init_pcb(curr_pcb, pid, args);
 
+    // if not shell, we must set a parent
+    if(pid != 0){
+        pcb_t* parent_pcb = get_pcb_ptr();          // getting existing pcb
+        curr_pcb->parent_pid = parent_pcb->curr_pid;          // set this to be parent of (soon-to-be) new pcb
+        parent_pcb->child_pid = curr_pcb->curr_pid;           // set parent's child to be curr_pcb
+    }
+
     // save current EBP and ESP registers into PCB before we change
-    asm volatile(
-        // literally save ebp and esp into (free to clobber) registers
-        "movl %%esp, %%eax;"
-        "movl %%ebp, %%ecx;"
+    // asm volatile(
+    //     // literally save ebp and esp into (free to clobber) registers
+    //     "mov %%esp, %0;"
+    //     "mov %%ebp, %1;"
         
-        : // no inputs
-        : "r" (curr_pcb->old_esp), "r" (curr_pcb->old_ebp)        // bro is this how we read registers im losing my minddddddd
-        : // fine to clobber
-    );
+    //     : "=r" (curr_pcb->old_esp), "=r" (curr_pcb->old_ebp)        // bro is this how we read registers im losing my minddddddd
+    // );
 
     // STEP 6: Context Switch - home stretch ?
-    
-    // ay so i think I cracked it - we just dont do this checkpoint
-    // nah fuck that we read manuals and shit
-    /*  steps to glory (per OSDEV - https://wiki.osdev.org/Task_State_Segment)
-            SS0 = kernel datasegment 
-            ESP0 (kernel esp) = stack-pointer 
-    */
-
     // fucking big brain moves at 2:57am
 
-    // prepare for context switch
+    // prepare for context switch: write new process' info to TSS
     tss.ss0 = KERNEL_DS;                        // if OSDEV tells you to jump off a cliff, would you do it? of course yes OSDEV legit
     tss.esp0 = curr_pcb->base_kernel_stack;     // already calculated, fucking genius
 
-    // push IRET context to stack
-    // now its asm volatile time, this is where boys become men
-    // OSDEV to save us? https://wiki.osdev.org/Getting_to_Ring_3
+    // need to do a tss_flush, then enter ring 3 ? -> no tss flush, since only one tss for all processes (for this mp)
 
-    // need to do a tss_flush, then enter ring 3 ?
-    // ***yo this is wrong ignore - we will need to do pair programming for this (but fortunately this is the last step)
+    /* OSDEV Order
+    user data segment
+    push current esp
+    pushf (?)
+    user code segment
+    */
 
     asm volatile(
-        "mov $0x2B, %%ax;"      // load 0x2B into task state register
-        "mov %%ax, %%;"
-
-        "mov $0x23, %%ax;"
-        "mov %%ax, %%ds;"
-        "mov %%ax, %%es;"
-        "mov %%ax, %%fs;"
-        "mov %%ax, %%gs;"
-
-        "movl "
-        "iret;"     // iret has to happen somewhere bro i do not know
+        // "cli;"
+        // look at x86_desc.h macros for the values below. also just follow osdev [order]
+        "pushl $0x002B;"            // push user data segement (SS)
+        "pushl %%esp;"              // push ESP
+        "pushfl;"                   // push flags (EFLAGS)
+        "pushl $0x0023;"            // push user code segment (CS)
+        "movl %0, %%eax;"
+        "pushl %%eax;"              // push the entry position (EIP)
+        "iret;"                     // iret has to happen
         
-        : // no inputs
-        : // there is an output but halt handles this
-        : // fine to clobber
+        "RETURN_FROM_HALT:;"         // this is where we jump from halt (per discussion)
+        "ret;"                      // something has to happen after we call halt
+        // maybe jump to cleanup call??? (in syscall linkage)
+        
+        : // no outputs
+        : "r"(entry_position)
+        : "%eax"
     );
 
+
+    /* this is THE approach */
+    /* set up correct values for user-level EIP, CS, EFLAGS, ESP, and SS registers on the kernel-mode stack */
+    /* then execute iret (allows for kernel -> user) instruction */
+
+    // it will pop it off and then go to what it was pointing to (context-wise)
+    // ls stuff
+
+    // comes into assembly linkage
+    // calls execute ls
+    // 5 things
+    // shell
+
+    // technically should never return 
     return 0;
 }
 
@@ -191,6 +243,10 @@ int32_t sys_read (int32_t fd, void* buf, int32_t nbytes){
     /* Check bounds of fd idx */
     if (fd < 0 || fd >= FDA_SIZE)
         return -1;
+    
+    // get pcb_ptr
+    curr_pcb = get_pcb_ptr();
+
     /* Check valid buf input */
     if (buf == NULL)
         return -1;
@@ -209,6 +265,10 @@ int32_t sys_write (int32_t fd, void* buf, int32_t nbytes){
     /* Check bounds of fd idx */
     if (fd < 0 || fd >= FDA_SIZE)
         return -1;
+
+    // get pcb_ptr
+    curr_pcb = get_pcb_ptr();
+
     /* Check valid buf input */
     if (buf == NULL)
         return -1;
@@ -227,8 +287,12 @@ int32_t sys_open (const uint8_t* filename){
     pcb_t* curr_pcb;
     dentry_t test_dentry;
     /*Check if named file exists*/
-    if(read_dentry_by_name(filename, &test_dentry) == -1)
+    // if(read_dentry_by_name(filename, &test_dentry) == -1)  -- original, i casted (int8_t*); this something we should ask about
+    if(read_dentry_by_name((int8_t*)filename, &test_dentry) == -1)
         return -1;
+
+    // get pcb_ptr
+    curr_pcb = get_pcb_ptr();
     /*Check if any fd entries are free*/
     int32_t fd_idx;
     for(fd_idx = 2; fd_idx < FDA_SIZE; fd_idx++){
@@ -263,11 +327,15 @@ int32_t sys_open (const uint8_t* filename){
 
 
 int32_t sys_close (int32_t fd){
-    //Still need curr_pcb access
     pcb_t* curr_pcb;
+
     /* Check bounds of fd idx (must be between 2 and 7)*/
     if (fd < 2 || fd >= FDA_SIZE)
         return -1;
+
+    // get pcb_ptr
+    curr_pcb = get_pcb_ptr();
+
     /* Check if fd already invalid */
     if (curr_pcb->fda[fd].flags == NOT_IN_USE)
         return -1;
@@ -308,6 +376,7 @@ int32_t bad_call(void){
     return -1;
 }
 
+
 /* void init_pcb(void)
  * Initializes a given pcb for use
  * Inputs:  pcb_t curr_pcb - pcb to initialize
@@ -323,8 +392,8 @@ void init_pcb(pcb_t* curr_pcb, int pid, uint8_t* args){
         curr_pcb->fda[i].fops_ptr = bad_table;
         curr_pcb->fda[i].inode = -1;
         curr_pcb->fda[i].flags = NOT_IN_USE;
-        curr_pcb->parent_pcb = NULL;
-        curr_pcb->child_pcb = NULL;
+        curr_pcb->parent_pid = NULL;
+        curr_pcb->child_pid = NULL;
     }
 
     // initialize first two entries of fda to STDIN and STDOUT
@@ -339,6 +408,25 @@ void init_pcb(pcb_t* curr_pcb, int pid, uint8_t* args){
     // curr_pcb->old_ebp = tss.eb
 
     // set base kernel stack (depends on the pid)
-    curr_pcb->base_kernel_stack = 0x800000 - (pid+1) * 0x2000;      // 8MB - (pid+1)*8kB
+    curr_pcb->base_kernel_stack = 0x800000 - (pid) * 0x2000;      // 8MB - (pid)*8kB
+    curr_pcb->curr_pid = pid;
 }
 
+/* pcb_t* get_pcb_ptr()
+ * Gets a pointer to the current pcb based on esp pointer
+ * Inputs:  none
+ * Outputs: pcb_t pointer to current pcb
+ * Side Effects: none
+ */
+pcb_t* get_pcb_ptr(void){
+    pcb_t* curr_ptr;
+
+    asm volatile(
+        "andl %%esp, %0;"      // load 0x2B into task state register
+        "movl %%eax, %1;"
+        : "=r" (curr_ptr)
+        : "r" (PCB_MASK)
+    );
+
+    return curr_ptr;
+}

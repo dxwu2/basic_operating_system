@@ -9,10 +9,11 @@
 #include "debug.h"
 #include "tests.h"
 #include "keyboard.h"
-#include "paging.h"
+// #include "paging.h"
 #include "rtc.h"
 #include "filesystem.h"
 #include "types.h"
+#include "syscall.h"
 //#define RUN_TESTS
 
 /* Macros. */
@@ -170,6 +171,8 @@ void entry(unsigned long magic, unsigned long addr) {
     launch_tests();
 #endif
     /* Execute the first program ("shell") ... */
+    uint8_t* first_program = (uint8_t*)"shell";
+    sys_execute(first_program);
 
     /* Spin (nicely, so we don't chew up cycles) */
     asm volatile (".1: hlt; jmp .1;");
