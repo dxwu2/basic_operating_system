@@ -112,6 +112,7 @@ void map_user_program(int pid) {
     page_directory[32].U = 1;   // accessible by all
     // R/W accessible
     page_directory[32].R = 1;
+    page_directory[32].S = 1;
     // might need to set more bits?
     page_directory[32].offset31_12 = (pid + 2) * FOUR_MB_OFFSET;    // we add 2 because the first 0-8MB are taken up already
 
