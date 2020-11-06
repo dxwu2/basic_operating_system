@@ -134,7 +134,8 @@ int32_t sys_execute (const uint8_t* command){
     // now obtain program entry position (bits 24-27) - also 4 bits so we can overwrite read_buf
     // offset should be 24 since we need to start looking at 24 (we originally start from 0)
     read_data(inode_idx, 24, read_buf, 4);              // read 4 bc only 4 bits to read
-    uint32_t* entry_position = (uint32_t*)read_buf;     // make this a uint32_t pointer
+    //uint32_t entry_position = (uint32_t)read_buf;     // make this a uint32_t pointer
+    uint32_t entry_position = (uint32_t)(read_buf[3] << 24 | read_buf[2] << 16 | read_buf[1] << 8 | read_buf[0]);
 
 
     // STEP 3: Paging
@@ -164,14 +165,14 @@ int32_t sys_execute (const uint8_t* command){
     // STEP 5: PCB
 
     // helper function to make/initialize a PCB
-    pcb_t* curr_pcb;
-    init_pcb(curr_pcb, pid, args);
+    pcb_t curr_pcb;
+    init_pcb(&curr_pcb, pid, args);
 
     // if not shell, we must set a parent
     if(pid != 0){
         pcb_t* parent_pcb = get_pcb_ptr();          // getting existing pcb
-        curr_pcb->parent_pid = parent_pcb->curr_pid;          // set this to be parent of (soon-to-be) new pcb
-        parent_pcb->child_pid = curr_pcb->curr_pid;           // set parent's child to be curr_pcb
+        curr_pcb.parent_pid = parent_pcb->curr_pid;          // set this to be parent of (soon-to-be) new pcb
+        parent_pcb->child_pid = curr_pcb.curr_pid;           // set parent's child to be curr_pcb
     }
 
     // save current EBP and ESP registers into PCB before we change
@@ -180,7 +181,7 @@ int32_t sys_execute (const uint8_t* command){
         "mov %%esp, %0;"
         "mov %%ebp, %1;"
         
-        : "=r" (curr_pcb->old_esp), "=r" (curr_pcb->old_ebp)        // bro is this how we read registers im losing my minddddddd
+        : "=r" (curr_pcb.old_esp), "=r" (curr_pcb.old_ebp)        // bro is this how we read registers im losing my minddddddd
     );
 
     // STEP 6: Context Switch - home stretch ?
@@ -188,7 +189,7 @@ int32_t sys_execute (const uint8_t* command){
 
     // prepare for context switch: write new process' info to TSS
     tss.ss0 = KERNEL_DS;                        // if OSDEV tells you to jump off a cliff, would you do it? of course yes OSDEV legit
-    tss.esp0 = curr_pcb->base_kernel_stack;     // already calculated, fucking genius
+    tss.esp0 = curr_pcb.base_kernel_stack;     // already calculated, fucking genius
 
     // need to do a tss_flush, then enter ring 3 ? -> no tss flush, since only one tss for all processes (for this mp)
 
@@ -207,16 +208,16 @@ int32_t sys_execute (const uint8_t* command){
         "pushfl;"                   // push flags (EFLAGS)
         "pushl $0x0023;"            // push user code segment (CS)
         "movl %0, %%eax;"
-        "pushl %%eax;"              // push the entry position (EIP)
+        "pushl %%eax;"              // push the entry position (EIP) -> must be somewhere around 128 MB
         "iret;"                     // iret has to happen
         
         "RETURN_FROM_HALT:;"         // this is where we jump from halt (per discussion)
-        "ret;"                      // something has to happen after we call halt
+        "ret;"                      // something has to happen after we call halt, change to IRET maybe??
         // maybe jump to cleanup call??? (in syscall linkage)
         
         : // no outputs
-        : "r"(entry_position)
-        : "%eax"
+        : "r" (entry_position)
+        : "eax"
     );
 
 
@@ -389,7 +390,12 @@ void init_pcb(pcb_t* curr_pcb, int pid, uint8_t* args){
     // initialize all entires to be bad at first
     int i;
     for(i = 0; i < FDA_SIZE; i++){
-        curr_pcb->fda[i].fops_ptr = bad_table;
+        curr_pcb->fda[i].fops_ptr = bad_table;       // FIXED: CAUSES PAGE FAULT EXCEPTION: because of how we initialized curr_pcb
+        // curr_pcb->fda[i].fops_ptr.open = NOT_IN_USE;
+        // curr_pcb->fda[i].fops_ptr.read = NOT_IN_USE;
+        // curr_pcb->fda[i].fops_ptr.write = NOT_IN_USE;
+        // curr_pcb->fda[i].fops_ptr.read = NOT_IN_USE;
+        
         curr_pcb->fda[i].inode = -1;
         curr_pcb->fda[i].flags = NOT_IN_USE;
         curr_pcb->parent_pid = NULL;

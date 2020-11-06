@@ -108,6 +108,10 @@ void map_user_program(int pid) {
     /* mapping */
     // index 32 because user program starts at 128MB in virtual memory and each "index" chunk is 4MB. 128MB/4MB => 32
     page_directory[32].P = 1;   // mark as present
+    // must be user level access -> but might already be set
+    page_directory[32].U = 1;   // accessible by all
+    // R/W accessible
+    page_directory[32].R = 1;
     // might need to set more bits?
     page_directory[32].offset31_12 = (pid + 2) * FOUR_MB_OFFSET;    // we add 2 because the first 0-8MB are taken up already
 
