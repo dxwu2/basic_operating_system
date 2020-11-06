@@ -37,7 +37,7 @@ void syscall_init() {
 }
 
 
-
+// insert function interface
 int32_t sys_halt (uint8_t status){
     // call sti since we called cli in execute
 
@@ -93,12 +93,12 @@ int32_t sys_execute (const uint8_t* command){
         return -1;
     }
 
-    int8_t cmd[MAX_CMD_LENGTH];            // get first command
-    uint8_t args[MAX_ARGS_LENGTH];          // get following arguments
-    uint8_t idx;                            // to identify spaces (also to index cmd)
-    uint8_t args_idx;                       // to index args
+    int8_t cmd[MAX_CMD_LENGTH];                 // get first command
+    uint8_t args[MAX_ARGS_LENGTH];              // get following arguments
+    uint8_t idx = 0;                            // to identify spaces (also to index cmd)
+    uint8_t args_idx = 0;                       // to index args
 
-    while(command[idx] != ' '){
+    while(command[idx] != ' ' && command[idx] != '\0' && command != '\n'){
         cmd[idx] = command[idx];        // copy command into cmd until first space
         idx++;
     }
