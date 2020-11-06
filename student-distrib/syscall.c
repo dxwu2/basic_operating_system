@@ -175,13 +175,13 @@ int32_t sys_execute (const uint8_t* command){
     }
 
     // save current EBP and ESP registers into PCB before we change
-    // asm volatile(
-    //     // literally save ebp and esp into (free to clobber) registers
-    //     "mov %%esp, %0;"
-    //     "mov %%ebp, %1;"
+    asm volatile(
+        // literally save ebp and esp into (free to clobber) registers
+        "mov %%esp, %0;"
+        "mov %%ebp, %1;"
         
-    //     : "=r" (curr_pcb->old_esp), "=r" (curr_pcb->old_ebp)        // bro is this how we read registers im losing my minddddddd
-    // );
+        : "=r" (curr_pcb->old_esp), "=r" (curr_pcb->old_ebp)        // bro is this how we read registers im losing my minddddddd
+    );
 
     // STEP 6: Context Switch - home stretch ?
     // fucking big brain moves at 2:57am
