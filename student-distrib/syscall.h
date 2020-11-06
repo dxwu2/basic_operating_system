@@ -18,8 +18,13 @@
 #define IN_USE  1
 #define NOT_IN_USE  0
 
+#define PCB_MASK 0x2000 // x2000 => 0010 0000 0000 0000 -> bit mask: 1110 0000 0000 0000  (because 32-13=19, need top 19 bits to identify)
+
 /* System call handler declaration */
 void system_call();
+
+// intialize system calls
+void syscall_init();
 
 /* Actual system call handlers (CP3) */
 int32_t sys_halt (uint8_t status);
@@ -34,10 +39,7 @@ int32_t sys_vidmap (uint8_t** screen_start);
 // function for invalid/nonexistent file operations
 int32_t bad_call(void);
 
-// initialzing a pcb for use
-void init_pcb(pcb_t* curr_pcb, int pid, uint8_t* args);
-
-typedef struct fops {
+typedef struct fops{
     // use function pointers since we have distinct use-cases for each (i.e. rtc_read vs terminal_read)
 
     int32_t (*open)(const uint8_t* filename);                   // open
@@ -78,10 +80,15 @@ typedef struct files {
 typedef struct pcb {
     files_t fda[FDA_SIZE];              // file descriptor table/array
     uint32_t base_kernel_stack;         // saves the base of each 8kB kernel stack for each user program
-    pcb_t* parent_pcb;                  // the parent of this process (which file called the current one)
-    pcb_t* child_pcb;                   // if this file needs to call another file
+    // pcb_t* parent_pcb;                  // the parent of this process (which file called the current one)
+    // pcb_t* child_pcb;                   // if this file needs to call another file
+
     uint32_t* entry_position;
 
+    int curr_pid;
+    int parent_pid;
+    int child_pid;
+    
     int old_esp;                        // esp of the parent process
     int old_ebp;                        // ebp of the parent process
 
@@ -89,8 +96,11 @@ typedef struct pcb {
 
 } pcb_t;
 
+// initialzing a pcb for use
+void init_pcb(pcb_t* curr_pcb, int pid, uint8_t* args);
 
-/* local variables */
-static int pid_array[MAX_NUM_PIDS];
+// gets pcb_t pointer
+pcb_t* get_pcb_ptr();
+
 
 #endif
