@@ -28,7 +28,11 @@ void handle_system_call(){
     while(1);
 }
 
-/* set up structures and local variables used in passing in parameters for system calls */
+/* void syscall_init() - set up structures and local variables used in passing in parameters for system calls
+ * Inputs: None
+ * Outputs: None
+ * Side Effects: initializes pid_array to unused for all entries
+ */
 void syscall_init() {
     int i;
     for (i = 0; i < MAX_NUM_PIDS; i++) {
@@ -37,16 +41,28 @@ void syscall_init() {
 }
 
 
-// insert function interface
+/* int32_t sys_halt(uint8_t status) 
+ * Inputs: status - some number 0-255 and indicates status of the executable?
+ * Outputs: returns a value to the parent execute system call so that we know how the program ended
+ * 
+ */
 int32_t sys_halt (uint8_t status){
     // call sti since we called cli in execute
 
-    // CHECK IF HALTING SHELL (hints doc thingy)
-    // if it is the first shell, just return -1 => literally use like an if statement
-
     pcb_t* curr_pcb = get_pcb_ptr();
 
+    // CHECK IF HALTING SHELL (hints doc thingy)
+    // if it is the first shell, just return -1 => literally use like an if statement
+    /*
+    if (curr_pcb->curr_pid == 0) {
+        return -1;
+    }
+    */
+
     // Set pids to unused
+    pid_array[curr_pcb->curr_pid] = NOT_IN_USE;
+
+
     int i;
     // we start at 2 because of stdin and stdout
     for (i = 2; i < FDA_SIZE; i++) {
@@ -178,14 +194,15 @@ int32_t sys_execute (const uint8_t* command){
     // STEP 5: PCB
 
     // helper function to make/initialize a PCB
-    pcb_t curr_pcb;
-    init_pcb(&curr_pcb, pid, args);
+    //pcb_t curr_pcb;
+    //init_pcb(&curr_pcb, pid, args);
+    pcb_t* curr_pcb = init_pcb(pid, args);
 
     // if not shell, we must set a parent
     if(pid != 0){
         pcb_t* parent_pcb = get_pcb_ptr();          // getting existing pcb
-        curr_pcb.parent_pid = parent_pcb->curr_pid;          // set this to be parent of (soon-to-be) new pcb
-        parent_pcb->child_pid = curr_pcb.curr_pid;           // set parent's child to be curr_pcb
+        curr_pcb->parent_pid = parent_pcb->curr_pid;          // set this to be parent of (soon-to-be) new pcb
+        parent_pcb->child_pid = curr_pcb->curr_pid;           // set parent's child to be curr_pcb
     }
 
     // save current EBP and ESP registers into PCB before we change
@@ -194,7 +211,7 @@ int32_t sys_execute (const uint8_t* command){
         "mov %%esp, %0;"
         "mov %%ebp, %1;"
         
-        : "=r" (curr_pcb.old_esp), "=r" (curr_pcb.old_ebp)        // bro is this how we read registers im losing my minddddddd
+        : "=r" (curr_pcb->old_esp), "=r" (curr_pcb->old_ebp)        // bro is this how we read registers im losing my minddddddd
     );
 
     // STEP 6: Context Switch - home stretch ?
@@ -202,7 +219,7 @@ int32_t sys_execute (const uint8_t* command){
 
     // prepare for context switch: write new process' info to TSS
     tss.ss0 = KERNEL_DS;                        // if OSDEV tells you to jump off a cliff, would you do it? of course yes OSDEV legit
-    tss.esp0 = curr_pcb.base_kernel_stack;     // already calculated, fucking genius
+    tss.esp0 = curr_pcb->base_kernel_stack;     // already calculated, fucking genius
 
     // need to do a tss_flush, then enter ring 3 ? -> no tss flush, since only one tss for all processes (for this mp)
 
@@ -290,7 +307,7 @@ int32_t sys_write (int32_t fd, void* buf, int32_t nbytes){
         return -1;
 
     // get pcb_ptr
-    curr_pcb = get_pcb_ptr(); // this might be wrong
+    curr_pcb = get_pcb_ptr(); // this might be wrong -> nvm, I stepped through and values look correct
 
     /* Check valid buf input */
     if (buf == NULL)
@@ -408,6 +425,7 @@ int32_t bad_call(void){
  * Outputs: none
  * Side Effects: ?
  */
+/*
 void init_pcb(pcb_t* curr_pcb, int pid, uint8_t* args){
     // initialize all entires to be bad at first
     int i;
@@ -439,6 +457,50 @@ void init_pcb(pcb_t* curr_pcb, int pid, uint8_t* args){
     curr_pcb->base_kernel_stack = 0x800000 - (pid) * 0x2000;      // 8MB - (pid)*8kB
     curr_pcb->curr_pid = pid;
 }
+*/
+
+/* void init_pcb(void)
+ * Initializes a given pcb for use
+ * Inputs:  pcb_t curr_pcb - pcb to initialize
+ *          int pid - identify the process
+ *          args - keep track of the arguments saved
+ * Outputs: a pointer to the initialized pcb
+ * Side Effects: initializes all the attributes of the pcb
+ */
+pcb_t* init_pcb(int pid, uint8_t* args){
+    // initialize all entires to be bad at first
+    int i;
+    pcb_t* curr_pcb = get_pcb_from_pid(pid);
+    for(i = 0; i < FDA_SIZE; i++){
+        curr_pcb->fda[i].fops_ptr = bad_table;       // FIXED: CAUSES PAGE FAULT EXCEPTION: because of how we initialized curr_pcb
+        // curr_pcb->fda[i].fops_ptr.open = NOT_IN_USE;
+        // curr_pcb->fda[i].fops_ptr.read = NOT_IN_USE;
+        // curr_pcb->fda[i].fops_ptr.write = NOT_IN_USE;
+        // curr_pcb->fda[i].fops_ptr.read = NOT_IN_USE;
+        
+        curr_pcb->fda[i].inode = -1;
+        curr_pcb->fda[i].flags = NOT_IN_USE;
+        curr_pcb->parent_pid = NULL;
+        curr_pcb->child_pid = NULL;
+    }
+
+    // initialize first two entries of fda to STDIN and STDOUT
+    curr_pcb->fda[0].fops_ptr = std_in_table;
+    // curr_pcb->fda[0].tss.esp0inode = -1;                 // stdin should not have inode
+    curr_pcb->fda[0].flags = IN_USE;
+    curr_pcb->fda[1].fops_ptr = std_out_table;
+    // curr_pcb->fda[1].inode = -1;                 // stdout should not have inode
+    curr_pcb->fda[1].flags = IN_USE;
+
+    // curr_pcb->old_esp = ;
+    // curr_pcb->old_ebp = tss.eb
+
+    // set base kernel stack (depends on the pid)
+    curr_pcb->base_kernel_stack = 0x800000 - (pid) * 0x2000;      // 8MB - (pid)*8kB
+    curr_pcb->curr_pid = pid;
+
+    return curr_pcb;
+}
 
 /* pcb_t* get_pcb_ptr()
  * Gets a pointer to the current pcb based on esp pointer
@@ -458,4 +520,11 @@ pcb_t* get_pcb_ptr(void){
     );
 
     return curr_ptr;
+}
+
+/* pcb_t - write a get pcb from pid function. also, when setting flags in line 444, not the same as the pcb addr in sys write */
+pcb_t* get_pcb_from_pid(int pid) {
+    pcb_t* pcb_ptr;
+    pcb_ptr = (pcb_t*)(EIGHT_MB - (pid + 1) * EIGHT_KB);
+    return pcb_ptr;
 }

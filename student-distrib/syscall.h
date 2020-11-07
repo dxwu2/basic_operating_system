@@ -19,6 +19,8 @@
 #define NOT_IN_USE  0
 
 #define PCB_MASK 0xFFFFE000 // x2000 => 0010 0000 0000 0000 -> bit mask: 1110 0000 0000 0000  (because 32-13=19, need top 19 bits to identify)
+#define EIGHT_MB    0x800000
+#define EIGHT_KB    0x2000
 
 /* System call handler declaration */
 void system_call();
@@ -97,10 +99,14 @@ typedef struct pcb {
 } pcb_t;
 
 // initialzing a pcb for use
-void init_pcb(pcb_t* curr_pcb, int pid, uint8_t* args);
+//void init_pcb(pcb_t* curr_pcb, int pid, uint8_t* args);
+pcb_t* init_pcb(int pid, uint8_t* args);
 
 // gets pcb_t pointer
 pcb_t* get_pcb_ptr();
+
+// gets a pcb_t pointer from the pid
+pcb_t* get_pcb_from_pid(int pid);
 
 
 #endif
