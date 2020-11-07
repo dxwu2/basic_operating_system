@@ -41,6 +41,9 @@ void syscall_init() {
 int32_t sys_halt (uint8_t status){
     // call sti since we called cli in execute
 
+    // CHECK IF HALTING SHELL (hints doc thingy)
+    // if it is the first shell, just return -1 => literally use like an if statement
+
     pcb_t* curr_pcb = get_pcb_ptr();
 
     // Set pids to unused
@@ -138,12 +141,14 @@ int32_t sys_execute (const uint8_t* command){
     }
 
     // now obtain program entry position (bits 24-27) - also 4 bits so we can overwrite read_buf
-    // offset should be 24 since we need to start looking at 24 (we originally start from 0)
-    read_data(inode_idx, 24, read_buf, 4);              // read 4 bc only 4 bits to read
-    //uint32_t entry_position = (uint32_t)read_buf;     // make this a uint32_t pointer
-    //uint32_t entry_position = (uint32_t)(read_buf[3] << 24 | read_buf[2] << 16 | read_buf[1] << 8 | read_buf[0]);
-    //uint32_t entry_position = *((uint32_t*)read_buf);
-    uint32_t entry_position = 0x080482e8;
+    // offset should be 6 since we need to start looking at 24 bytes (we originally start from 0)
+    // the offset is a uint32_t, so there are 4 bytes per (24/4 => 6)
+    read_data(inode_idx, 6, read_buf, 4);              // read 4 bc only 4 bits to read
+    uint32_t entry_position = (uint32_t)(read_buf[3] << 24 | read_buf[2] << 16 | read_buf[1] << 8 | read_buf[0]); // shell gives 0x080495c0 (still wrong)
+    
+    //uint32_t entry_position = (uint32_t)read_buf;     // make this a uint32_t pointer -> shell gives 0x7ffe24 (def wrong)
+    // uint32_t entry_position = *((uint32_t*)read_buf); // shell gives 0x080495c0
+    //uint32_t entry_position = 0x080482e8;     // -> correct value according to hex editor
 
 
     // STEP 3: Paging
@@ -285,7 +290,7 @@ int32_t sys_write (int32_t fd, void* buf, int32_t nbytes){
         return -1;
 
     // get pcb_ptr
-    curr_pcb = get_pcb_ptr();
+    curr_pcb = get_pcb_ptr(); // this might be wrong
 
     /* Check valid buf input */
     if (buf == NULL)
