@@ -69,7 +69,7 @@ int32_t sys_halt (uint8_t status){
         
         : // no outputs
         : "r"(curr_pcb->old_esp), "r"(curr_pcb->old_ebp), "r"((uint32_t)status)       // we booling now
-        : "%eax"
+        : "eax"
     );
 
     // remember to go back to end of execute and set the return value accordingly (always returns 0 right now)
@@ -88,6 +88,7 @@ int32_t sys_halt (uint8_t status){
 int32_t sys_execute (const uint8_t* command){
 
     // STEP 1: parse the command
+    int i;
 
     if(command == NULL){
         return -1;
@@ -98,7 +99,12 @@ int32_t sys_execute (const uint8_t* command){
     uint8_t idx = 0;                            // to identify spaces (also to index cmd)
     uint8_t args_idx = 0;                       // to index args
 
-    while(command[idx] != ' ' && command[idx] != '\0' && command != '\n'){
+    for(i = 0; i < MAX_CMD_LENGTH; i++){
+        cmd[i] = '\0';
+        args[i] = '\0';
+    }
+
+    while(command[idx] != ' ' && command[idx] != '\0'){
         cmd[idx] = command[idx];        // copy command into cmd until first space
         idx++;
     }
@@ -205,6 +211,7 @@ int32_t sys_execute (const uint8_t* command){
         // look at x86_desc.h macros for the values below. also just follow osdev [order]
         "pushl $0x002B;"            // push user data segement (SS)
         "pushl %%esp;"              // push ESP
+        //"pushl $0x8400000;"         // push ESP (132MB)
         "pushfl;"                   // push flags (EFLAGS)
         "pushl $0x0023;"            // push user code segment (CS)
         "movl %0, %%eax;"
@@ -217,7 +224,7 @@ int32_t sys_execute (const uint8_t* command){
         
         : // no outputs
         : "r" (entry_position)
-        : "eax"
+        : "eax", "ecx"
     );
 
 
