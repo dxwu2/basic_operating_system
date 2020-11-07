@@ -18,7 +18,7 @@
 #define IN_USE  1
 #define NOT_IN_USE  0
 
-#define PCB_MASK 0x2000 // x2000 => 0010 0000 0000 0000 -> bit mask: 1110 0000 0000 0000  (because 32-13=19, need top 19 bits to identify)
+#define PCB_MASK 0xFFFFE000 // x2000 => 0010 0000 0000 0000 -> bit mask: 1110 0000 0000 0000  (because 32-13=19, need top 19 bits to identify)
 
 /* System call handler declaration */
 void system_call();

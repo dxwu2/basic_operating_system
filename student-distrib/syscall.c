@@ -141,7 +141,9 @@ int32_t sys_execute (const uint8_t* command){
     // offset should be 24 since we need to start looking at 24 (we originally start from 0)
     read_data(inode_idx, 24, read_buf, 4);              // read 4 bc only 4 bits to read
     //uint32_t entry_position = (uint32_t)read_buf;     // make this a uint32_t pointer
-    uint32_t entry_position = (uint32_t)(read_buf[3] << 24 | read_buf[2] << 16 | read_buf[1] << 8 | read_buf[0]);
+    //uint32_t entry_position = (uint32_t)(read_buf[3] << 24 | read_buf[2] << 16 | read_buf[1] << 8 | read_buf[0]);
+    //uint32_t entry_position = *((uint32_t*)read_buf);
+    uint32_t entry_position = 0x080482e8;
 
 
     // STEP 3: Paging
@@ -210,7 +212,15 @@ int32_t sys_execute (const uint8_t* command){
         // "cli;"
         // look at x86_desc.h macros for the values below. also just follow osdev [order]
         "pushl $0x002B;"            // push user data segement (SS)
-        "pushl %%esp;"              // push ESP
+        //"pushl %%esp;"              // push ESP -> wrong because we are pushing the kernel stack address. ESP here is 0x7ffd04 -> definitely wrong
+                                    // not what we want because we are switching to user stack
+                                    // We want the user's stack pointer (virt. mem.) 
+                                    // should the user's stack pointer less than 132 MB (132 MB - 4 B) -> so that it doesn't go outside the page
+        //"mov $0x002B, %%ax;"  -> don't need this?? (according to Harsh)
+        //"mov %%ax, %%ds;"
+        "movl $0x83FFFFC, %%eax;"          // 132 MB - 4 B => 0x8400000 - 0x4 => 0x83FFFFC
+        "pushl %%eax;"
+
         //"pushl $0x8400000;"         // push ESP (132MB)
         "pushfl;"                   // push flags (EFLAGS)
         "pushl $0x0023;"            // push user code segment (CS)
@@ -435,7 +445,8 @@ pcb_t* get_pcb_ptr(void){
     pcb_t* curr_ptr;
 
     asm volatile(
-        "andl %%esp, %0;"      // load 0x2B into task state register
+        "movl %0, %%eax;"
+        "andl %%esp, %%eax;"      // load 0x2B into task state register
         "movl %%eax, %1;"
         : "=r" (curr_ptr)
         : "r" (PCB_MASK)
