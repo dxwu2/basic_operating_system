@@ -14,6 +14,7 @@ fops_t bad_table = {bad_call, bad_call, bad_call, bad_call};
 
 /* local variables */
 static int pid_array[MAX_NUM_PIDS];
+static int curr_pid;        // needed when setting parent pid
 
 
 /* void handle_system_call()
@@ -58,6 +59,7 @@ int32_t sys_halt (uint8_t status){
         return -1;
     }
     */
+    
 
     // Set pids to unused
     pid_array[curr_pcb->curr_pid] = NOT_IN_USE;
@@ -197,13 +199,19 @@ int32_t sys_execute (const uint8_t* command){
     //pcb_t curr_pcb;
     //init_pcb(&curr_pcb, pid, args);
     pcb_t* curr_pcb = init_pcb(pid, args);
+    pcb_t* testing_pcb = get_pcb_ptr();
 
     // if not shell, we must set a parent
     if(pid != 0){
-        pcb_t* parent_pcb = get_pcb_ptr();          // getting existing pcb
-        curr_pcb->parent_pid = parent_pcb->curr_pid;          // set this to be parent of (soon-to-be) new pcb
-        parent_pcb->child_pid = curr_pcb->curr_pid;           // set parent's child to be curr_pcb
+        curr_pcb->parent_pid = curr_pid;
+        pcb_t* parent_pcb = get_pcb_from_pid(curr_pid); // retrieve parent program's pcb
+        parent_pcb->child_pid = pid;
+        // pcb_t* parent_pcb = get_pcb_ptr();          // getting existing pcb
+        // curr_pcb->parent_pid = parent_pcb->curr_pid;          // set this to be parent of (soon-to-be) new pcb
+        // parent_pcb->child_pid = curr_pcb->curr_pid;           // set parent's child to be curr_pcb
     }
+    // update current pid
+    curr_pid = pid;
 
     // save current EBP and ESP registers into PCB before we change
     asm volatile(
@@ -231,7 +239,7 @@ int32_t sys_execute (const uint8_t* command){
     */
 
     asm volatile(
-        // "cli;"
+        //"cli;"
         // look at x86_desc.h macros for the values below. also just follow osdev [order]
         "pushl $0x002B;"            // push user data segement (SS)
         //"pushl %%esp;"              // push ESP -> wrong because we are pushing the kernel stack address. ESP here is 0x7ffd04 -> definitely wrong
@@ -294,8 +302,8 @@ int32_t sys_read (int32_t fd, void* buf, int32_t nbytes){
     if (curr_pcb->fda[fd].flags == NOT_IN_USE)
         return -1;
 
-    curr_pcb->fda[fd].fops_ptr.read(fd, buf, nbytes);
-    return 0;
+    return curr_pcb->fda[fd].fops_ptr.read(fd, buf, nbytes);
+    //return 0;
 }
 
 
@@ -316,8 +324,8 @@ int32_t sys_write (int32_t fd, void* buf, int32_t nbytes){
     if (curr_pcb->fda[fd].flags == NOT_IN_USE)
         return -1;
 
-    curr_pcb->fda[fd].fops_ptr.write(fd, buf, nbytes);
-    return 0;
+    return curr_pcb->fda[fd].fops_ptr.write(fd, buf, nbytes);
+    //return 0;
 }
 
 
@@ -498,6 +506,7 @@ pcb_t* init_pcb(int pid, uint8_t* args){
     // set base kernel stack (depends on the pid)
     curr_pcb->base_kernel_stack = 0x800000 - (pid) * 0x2000;      // 8MB - (pid)*8kB
     curr_pcb->curr_pid = pid;
+    curr_pcb->args = args;
 
     return curr_pcb;
 }

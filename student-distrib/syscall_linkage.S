@@ -10,8 +10,8 @@ SYSTEM_CALL_WRAPPER:
     pushl %edx      # push argument registers for system call
     pushl %ecx
     pushl %ebx
+    sti
     
-
     cmpl $1, %eax   # check system call index is between 1 and 8 (for 8 system calls total) 
     jb invalid_idx
     cmpl $8, %eax
@@ -29,7 +29,7 @@ cleanup_call:
     popl %ecx
     popl %edx
     popfl       # popping all flags
-    sti         # end critical section
+    # sti         # end critical section
     iret        # per osdev, need iret since interrupt context
 
 jump_table:     # jump table of system call handlers
