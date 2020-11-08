@@ -38,7 +38,7 @@ int32_t sys_close (int32_t fd);
 int32_t sys_getargs (uint8_t* buf, int32_t nbytes);
 int32_t sys_vidmap (uint8_t** screen_start);
 
-// function for invalid/nonexistent file operations
+// functions for invalid/nonexistent file operations
 int32_t bad_open(const uint8_t* filename);
 int32_t bad_read(int32_t fd, void* buf, int32_t nbytes);
 int32_t bad_write(int32_t fd, const void* buf, int32_t nbytes);

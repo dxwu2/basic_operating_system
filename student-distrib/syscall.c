@@ -448,7 +448,7 @@ int32_t sys_vidmap (uint8_t** screen_start){
 }
 
 
-/* int32_t bad_call(void)
+/* int32_t bad call functions (args depend on function type)
  * Is a bad call function because function pointer does not exist
  * Inputs: none
  * Outputs: -1 by default since bad call
