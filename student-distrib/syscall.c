@@ -276,7 +276,13 @@ int32_t sys_execute (const uint8_t* command){
     return 0;
 }
 
-
+/* int32_t sys_read(int32_t fd, void* buf, int32_t nbytes)
+ * Checks for valid fd input and reads by calling proper read() function ptr
+ * Inputs:  int32_t fd - index of fd to use to read
+ *          void* buf - ptr to buffer we read from
+ *          int32_t nbytes - number of bytes to read
+ * Outputs: -1 if invalid argument or fd not initialized
+ */
 int32_t sys_read (int32_t fd, void* buf, int32_t nbytes){
     //I need access to curr_pcb
     pcb_t* curr_pcb;
@@ -298,7 +304,13 @@ int32_t sys_read (int32_t fd, void* buf, int32_t nbytes){
     return 0;
 }
 
-
+/* int32_t sys_write(int32_t fd, void* buf, int32_t nbytes)
+ * Checks for valid fd input and writes by calling proper write() function ptr
+ * Inputs:  int32_t fd - index of fd to use to write
+ *          void* buf - ptr to buffer we write from
+ *          int32_t nbytes - number of bytes to write
+ * Outputs: -1 if invalid argument or fd not initialized
+ */
 int32_t sys_write (int32_t fd, void* buf, int32_t nbytes){
     //I need access to curr_pcb
     pcb_t* curr_pcb;
@@ -320,7 +332,13 @@ int32_t sys_write (int32_t fd, void* buf, int32_t nbytes){
     return 0;
 }
 
-
+/* int32_t sys_open (const uint8_t* filename)
+ * Checks for valid filename input; Find empty entry in fda for pcb and initialize fd entry; call proper open() function ptr
+ * Inputs:  const uint8_t* filename - name of file to open and create fd entry for
+ * Outputs: -1 if invalid argument/entry does not exist, no empty entry in fda, or unsuccessful open() fptr call
+ *           0 otherwise
+ * Side Effects: Opens filename and sets up fda entry for pcb for this file descriptor
+ */
 int32_t sys_open (const uint8_t* filename){
     // need to return -1 if (File Descriptor) array is full - see appendix A 8.2 last sentence 
     //I need access to curr_pcb
@@ -359,13 +377,22 @@ int32_t sys_open (const uint8_t* filename){
     fd_entry.inode = test_dentry.inode_num;
     fd_entry.file_position = 0;
     fd_entry.flags = IN_USE;
+    
+    /* Make actual open call and return */
+    if(0 != fd_entry.fops_ptr.open(filename))
+        return -1;
 
     /* Finally set entry in fda for curr_pcb */
     curr_pcb->fda[fd_idx] = fd_entry;
     return fd_idx;
 }
 
-
+/* int32_t sys_close (int32_t fd)
+ * Checks for valid fd input and closes corresponding fd by calling proper close() function ptr
+ * Inputs:  int32_t fd - index of fd to close 
+ * Outputs: -1 if invalid fd argument or close does not complete successfully
+ * Side Effects: Closes file descriptor input
+ */
 int32_t sys_close (int32_t fd){
     pcb_t* curr_pcb;
 
