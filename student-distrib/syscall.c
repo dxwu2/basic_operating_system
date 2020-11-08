@@ -59,13 +59,12 @@ int32_t sys_halt (uint8_t status){
         return -1;
     }
     */
-    
 
     // Set pids to unused
     pid_array[curr_pcb->curr_pid] = NOT_IN_USE;
 
-
     int i;
+    // close any relevant FDs
     // we start at 2 because of stdin and stdout
     for (i = 2; i < FDA_SIZE; i++) {
         curr_pcb->fda[i].flags = NOT_IN_USE;
@@ -74,22 +73,22 @@ int32_t sys_halt (uint8_t status){
     // restore parent paging
     // pcb_t* parent_pcb = curr_pcb->parent_pcb;
     map_user_program(curr_pcb->parent_pid);
-
-    // close any relevant FDs
-    // STILL NEED TO DO?
     
     // restore tss values and EBP/ESP values
     tss.esp0 = curr_pcb->old_esp;
 
+    // restore pcb
+    curr_pid = curr_pcb->parent_pid;
+
     asm volatile(
         // literally save ebp and esp into (free to clobber) registers
-        "movl %0, %%esp;"
+        "movl %0, %%eax;"
         "movl %1, %%ebp;"
-        "movl %2, %%eax;"
+        "movl %2, %%esp;"
         "jmp RETURN_FROM_HALT;"
         
         : // no outputs
-        : "r"(curr_pcb->old_esp), "r"(curr_pcb->old_ebp), "r"((uint32_t)status)       // we booling now
+        : "r"((uint32_t)status), "r"(curr_pcb->old_ebp), "r"(curr_pcb->old_esp)       // we booling now
         : "eax"
     );
 
@@ -110,6 +109,7 @@ int32_t sys_execute (const uint8_t* command){
 
     // STEP 1: parse the command
     int i;
+    int return_val;
 
     if(command == NULL){
         return -1;
@@ -259,10 +259,9 @@ int32_t sys_execute (const uint8_t* command){
         "iret;"                     // iret has to happen
         
         "RETURN_FROM_HALT:;"         // this is where we jump from halt (per discussion)
-        "ret;"                      // something has to happen after we call halt, change to IRET maybe??
-        // maybe jump to cleanup call??? (in syscall linkage)
+        "movl %%eax, %1;"
         
-        : // no outputs
+        : "=r" (return_val)
         : "r" (entry_position)
         : "eax", "ecx"
     );
@@ -281,7 +280,7 @@ int32_t sys_execute (const uint8_t* command){
     // shell
 
     // technically should never return 
-    return 0;
+    return return_val;
 }
 
 /* int32_t sys_read(int32_t fd, void* buf, int32_t nbytes)
@@ -432,6 +431,12 @@ int32_t sys_close (int32_t fd){
  */
 int32_t sys_getargs (uint8_t* buf, int32_t nbytes){
     // we will prob need to interact with PCB for this
+    if (buf == NULL) return -1;
+
+    if (nbytes <= 0) return -1;
+
+    pcb_t *curr_pcb = get_pcb_ptr();
+    memcpy(buf, curr_pcb->args, nbytes);
     return 0;
 }
 
@@ -451,48 +456,6 @@ int32_t bad_call(void){
     return -1;
 }
 
-
-/* void init_pcb(void)
- * Initializes a given pcb for use
- * Inputs:  pcb_t curr_pcb - pcb to initialize
- *          int pid - identify the process
- *          args - keep track of the arguments saved
- * Outputs: none
- * Side Effects: ?
- */
-/*
-void init_pcb(pcb_t* curr_pcb, int pid, uint8_t* args){
-    // initialize all entires to be bad at first
-    int i;
-    for(i = 0; i < FDA_SIZE; i++){
-        curr_pcb->fda[i].fops_ptr = bad_table;       // FIXED: CAUSES PAGE FAULT EXCEPTION: because of how we initialized curr_pcb
-        // curr_pcb->fda[i].fops_ptr.open = NOT_IN_USE;
-        // curr_pcb->fda[i].fops_ptr.read = NOT_IN_USE;
-        // curr_pcb->fda[i].fops_ptr.write = NOT_IN_USE;
-        // curr_pcb->fda[i].fops_ptr.read = NOT_IN_USE;
-        
-        curr_pcb->fda[i].inode = -1;
-        curr_pcb->fda[i].flags = NOT_IN_USE;
-        curr_pcb->parent_pid = NULL;
-        curr_pcb->child_pid = NULL;
-    }
-
-    // initialize first two entries of fda to STDIN and STDOUT
-    curr_pcb->fda[0].fops_ptr = std_in_table;
-    // curr_pcb->fda[0].tss.esp0inode = -1;                 // stdin should not have inode
-    curr_pcb->fda[0].flags = IN_USE;
-    curr_pcb->fda[1].fops_ptr = std_out_table;
-    // curr_pcb->fda[1].inode = -1;                 // stdout should not have inode
-    curr_pcb->fda[1].flags = IN_USE;
-
-    // curr_pcb->old_esp = ;
-    // curr_pcb->old_ebp = tss.eb
-
-    // set base kernel stack (depends on the pid)
-    curr_pcb->base_kernel_stack = 0x800000 - (pid) * 0x2000;      // 8MB - (pid)*8kB
-    curr_pcb->curr_pid = pid;
-}
-*/
 
 /* void init_pcb(void)
  * Initializes a given pcb for use
