@@ -5,12 +5,12 @@
 #include "rtc.h"
 
 // initialize the file operations table 
-fops_t std_in_table = {bad_call, terminal_read, bad_call, bad_call};
-fops_t std_out_table = {bad_call, bad_call, terminal_write, bad_call};
+fops_t std_in_table = { bad_open, terminal_read, bad_write, bad_close};
+fops_t std_out_table = {bad_open, bad_read, terminal_write, bad_close};
 fops_t rtc_table = {rtc_open, rtc_read, rtc_write, rtc_close};
 fops_t filesys_table = {file_open, file_read, file_write, file_close};
 fops_t filedir_table = {dir_open, dir_read, dir_write, dir_close};
-fops_t bad_table = {bad_call, bad_call, bad_call, bad_call};
+fops_t bad_table = {bad_open, bad_read, bad_write, bad_close};
 
 /* local variables */
 static int pid_array[MAX_NUM_PIDS];
@@ -452,7 +452,16 @@ int32_t sys_vidmap (uint8_t** screen_start){
  * Outputs: -1 by default since bad call
  * Side Effects: none
  */
-int32_t bad_call(void){
+int32_t bad_open(const uint8_t* filename){
+    return -1;
+}
+int32_t bad_read(int32_t fd, void* buf, int32_t nbytes){
+    return -1;
+}
+int32_t bad_write(int32_t fd, const void* buf, int32_t nbytes){
+    return -1;
+}
+int32_t bad_close(int32_t fd){
     return -1;
 }
 

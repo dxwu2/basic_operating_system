@@ -39,14 +39,17 @@ int32_t sys_getargs (uint8_t* buf, int32_t nbytes);
 int32_t sys_vidmap (uint8_t** screen_start);
 
 // function for invalid/nonexistent file operations
-int32_t bad_call(void);
+int32_t bad_open(const uint8_t* filename);
+int32_t bad_read(int32_t fd, void* buf, int32_t nbytes);
+int32_t bad_write(int32_t fd, const void* buf, int32_t nbytes);
+int32_t bad_close(int32_t fd);
 
 typedef struct fops{
     // use function pointers since we have distinct use-cases for each (i.e. rtc_read vs terminal_read)
 
     int32_t (*open)(const uint8_t* filename);                   // open
     int32_t (*read)(int32_t fd, void* buf, int32_t nbytes);     // read
-    int32_t (*write)(int32_t fd, void* buf, int32_t nbytes);    // write
+    int32_t (*write)(int32_t fd, const void* buf, int32_t nbytes);    // write
     int32_t (*close)(int32_t fd);                               // close
 
 } fops_t;

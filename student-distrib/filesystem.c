@@ -158,7 +158,7 @@ uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t leng
   * Outputs : returns 0 on success, -1 on failure
   * Side Effects    : change global inode number to the one associated with this file (used in file_read)
   */
-uint32_t file_open(const uint8_t* filename) {
+int32_t file_open(const uint8_t* filename) {
     uint32_t* cur_dentry;
     int i;
     /* loop through dentries to find the one with matching filename */
@@ -178,7 +178,7 @@ uint32_t file_open(const uint8_t* filename) {
  * Inputs   : fd - file descriptor (unused here)
  * Outputs  : 0
  */
-uint32_t file_close(uint32_t fd){
+int32_t file_close(int32_t fd){
     return 0;
 }
 
@@ -189,7 +189,7 @@ uint32_t file_close(uint32_t fd){
  * Outputs  : >= 0 on success, -1 on failure (check generic read function header)
  * 
  */ 
-uint32_t file_read(uint32_t fd, void* buf, uint32_t nbytes){
+int32_t file_read(int32_t fd, void* buf, int32_t nbytes){
     /* use read_data */
     return read_data(global_inode_index, 0, buf, nbytes);   // start at offset 0 because we want the whole file
 }
@@ -200,7 +200,7 @@ uint32_t file_read(uint32_t fd, void* buf, uint32_t nbytes){
  *          nbytes : number of bytes
  * Outputs  : -1
  */
-uint32_t file_write(uint32_t fd, void* buf, uint32_t nbytes){
+int32_t file_write(int32_t fd, const void* buf, int32_t nbytes){
     return -1;      //do nothing, return -1
 }
 
@@ -209,7 +209,7 @@ uint32_t file_write(uint32_t fd, void* buf, uint32_t nbytes){
  * Inputs   : filename
  * Outputs  : 0
  */
-uint32_t dir_open(const int8_t* filename){
+int32_t dir_open(const uint8_t* filename){
     dentry_t* cur_dentry;
     read_dentry_by_name(filename, cur_dentry);
     return 0;
@@ -219,7 +219,7 @@ uint32_t dir_open(const int8_t* filename){
  * Inputs   : file descriptor
  * Outputs  : 0
  */
-uint32_t dir_close(uint32_t fd){
+int32_t dir_close(int32_t fd){
     return 0;       //"probably does nothing, return 0"
 }
 
@@ -229,7 +229,7 @@ uint32_t dir_close(uint32_t fd){
  *          : nbytes - number of bytes to read
  * Outputs  : >= 0 on success, -1 on failure
  */
-uint32_t dir_read(uint32_t fd, void* buf, uint32_t nbytes){
+int32_t dir_read(int32_t fd, void* buf, int32_t nbytes){
     // use of global variable to keep track of which file we are on (which index)
     global_file_index = fd;
     /* use read_dentry_by_index */
@@ -243,6 +243,6 @@ uint32_t dir_read(uint32_t fd, void* buf, uint32_t nbytes){
  *          : nbytes
  * Outputs  : returns -1
  */
-uint32_t dir_write(uint32_t fd, void* buf, uint32_t nbytes){
+int32_t dir_write(int32_t fd, const void* buf, int32_t nbytes){
     return -1;      //do nothing, return -1
 }
