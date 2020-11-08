@@ -89,7 +89,7 @@ int32_t sys_halt (uint8_t status){
         
         : // no outputs
         : "r"((uint32_t)status), "r"(curr_pcb->old_ebp), "r"(curr_pcb->old_esp)       // we booling now
-        : "eax"
+        //: "eax"
     );
 
     // remember to go back to end of execute and set the return value accordingly (always returns 0 right now)
@@ -391,6 +391,7 @@ int32_t sys_open (const uint8_t* filename){
 
     /* Finally set entry in fda for curr_pcb */
     curr_pcb->fda[fd_idx] = fd_entry;
+    //return 0;
     return fd_idx;
 }
 
