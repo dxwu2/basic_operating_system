@@ -50,7 +50,7 @@ void syscall_init() {
 int32_t sys_halt (uint8_t status){
     // call sti since we called cli in execute
 
-    pcb_t* curr_pcb = get_pcb_ptr();
+    pcb_t* curr_pcb = get_pcb_from_pid(curr_pid);
 
     // CHECK IF HALTING SHELL (hints doc thingy)
     // if it is the first shell, just return -1 => literally use like an if statement
@@ -86,10 +86,12 @@ int32_t sys_halt (uint8_t status){
         "movl %1, %%ebp;"
         "movl %2, %%esp;"
         "jmp RETURN_FROM_HALT;"
+        // "leave;"
+        // "ret;"
         
         : // no outputs
         : "r"((uint32_t)status), "r"(curr_pcb->old_ebp), "r"(curr_pcb->old_esp)       // we booling now
-        : "eax"
+        // : "eax"
     );
 
     // remember to go back to end of execute and set the return value accordingly (always returns 0 right now)
@@ -199,7 +201,7 @@ int32_t sys_execute (const uint8_t* command){
     //pcb_t curr_pcb;
     //init_pcb(&curr_pcb, pid, args);
     pcb_t* curr_pcb = init_pcb(pid, args);
-    pcb_t* testing_pcb = get_pcb_ptr();
+    // pcb_t* testing_pcb = get_pcb_ptr();
 
     // if not shell, we must set a parent
     if(pid != 0){
@@ -391,7 +393,7 @@ int32_t sys_open (const uint8_t* filename){
 
     /* Finally set entry in fda for curr_pcb */
     curr_pcb->fda[fd_idx] = fd_entry;
-    return fd_idx;
+    return 0;
 }
 
 /* int32_t sys_close (int32_t fd)
