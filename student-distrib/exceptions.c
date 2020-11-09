@@ -40,15 +40,13 @@ void handle_exception(unsigned vec){
     // if page fault, I want to print out the stack and CR2
     int ESP;
     int CR2;
-    int DS;
 
     // save registers into variables
     asm volatile(
         "movl %%esp, %0;"
         "movl %%cr2, %1;"
-        "mov %%ds, %2;"
         
-        : "=r" (ESP), "=r" (CR2), "r=" (DS)
+        : "=r" (ESP), "=r" (CR2)
     );
 
     printf("ESP: %x\n", ESP);

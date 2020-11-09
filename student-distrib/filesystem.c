@@ -240,12 +240,13 @@ int32_t dir_read(int32_t fd, void* buf, int32_t nbytes){
     int8_t* buf2;
     /* Use global file index to access next dir entry */
 	if(!read_dentry_by_index(global_file_index, &test_dentry)){
+        /* Truncate fname_len to 32 bytes if necessary */
 		int8_t fname_len = (strlen(test_dentry.filename) > FILENAME_LEN) ? FILENAME_LEN : strlen(test_dentry.filename);
         strncpy(buf2, test_dentry.filename, fname_len);
-        strncpy((void*)buf, (int8_t*)test_dentry.filename, fname_len);
+        strncpy((int8_t*)buf, (int8_t*)test_dentry.filename, fname_len);
 		// use of global variable to keep track of which file we are on (which index)
         global_file_index++;
-        return 0;
+        return fname_len;
 	} else {
         global_file_index = 0;
         return -1;
