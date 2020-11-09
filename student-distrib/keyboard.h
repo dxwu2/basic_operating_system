@@ -42,6 +42,9 @@ int ctrl_pressed;
 int caps_lock_pressed;
 int alt_pressed;
 
+// indicate keyboard that shell is running
+volatile int shell_flag;
+
 // initialize keyboard for use
 void keyboard_init(void);
 

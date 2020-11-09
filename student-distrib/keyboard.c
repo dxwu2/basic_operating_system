@@ -143,6 +143,11 @@ void process_key(uint8_t scancode){
         // clear screen if CTRL+L or CTRL+l
         if(scancode == L){
             clear();                    // clear screen from lib.c
+            
+            // if shell is running, print 391OS>
+            if(shell_flag == 1){
+                printf("391OS> ");
+            }
         }
         return;
     }
