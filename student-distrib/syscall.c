@@ -5,12 +5,12 @@
 #include "rtc.h"
 
 // initialize the file operations table 
-fops_t std_in_table = {bad_call, terminal_read, bad_call, bad_call};
-fops_t std_out_table = {bad_call, bad_call, terminal_write, bad_call};
+fops_t std_in_table = { bad_open, terminal_read, bad_write, bad_close};
+fops_t std_out_table = {bad_open, bad_read, terminal_write, bad_close};
 fops_t rtc_table = {rtc_open, rtc_read, rtc_write, rtc_close};
 fops_t filesys_table = {file_open, file_read, file_write, file_close};
 fops_t filedir_table = {dir_open, dir_read, dir_write, dir_close};
-fops_t bad_table = {bad_call, bad_call, bad_call, bad_call};
+fops_t bad_table = {bad_open, bad_read, bad_write, bad_close};
 
 /* local variables */
 static int pid_array[MAX_NUM_PIDS];
@@ -48,7 +48,16 @@ void syscall_init() {
  * 
  */
 int32_t sys_halt (uint8_t status){
-    // call sti since we called cli in execute
+    int32_t return_val;
+
+    // meaning an exception on user side was generated -> squash!
+    if(exception_flag == 1){
+        exception_flag = 0;
+        return_val = 256;       // also need to return 256
+    }
+    else{
+        return_val = (int32_t)status;       // just return normal status
+    }
 
     pcb_t* curr_pcb = get_pcb_from_pid(curr_pid);
 
@@ -70,12 +79,18 @@ int32_t sys_halt (uint8_t status){
         curr_pcb->fda[i].flags = NOT_IN_USE;
     }
 
+    // if first shell, restart a new one
+    if(curr_pid == 0){
+        sys_execute((uint8_t*)"shell");
+    }
+
     // restore parent paging
     // pcb_t* parent_pcb = curr_pcb->parent_pcb;
     map_user_program(curr_pcb->parent_pid);
     
     // restore tss values and EBP/ESP values
     tss.esp0 = curr_pcb->old_esp;
+    tss.ss0 = KERNEL_DS;        // unsure if this is needed? halt worked fine without
 
     // restore pcb
     curr_pid = curr_pcb->parent_pid;
@@ -90,7 +105,7 @@ int32_t sys_halt (uint8_t status){
         // "ret;"
         
         : // no outputs
-        : "r"((uint32_t)status), "r"(curr_pcb->old_ebp), "r"(curr_pcb->old_esp)       // we booling now
+        : "r"((int32_t)return_val), "r"(curr_pcb->old_ebp), "r"(curr_pcb->old_esp)       // we booling now
         // : "eax"
     );
 
@@ -281,7 +296,7 @@ int32_t sys_execute (const uint8_t* command){
     // 5 things
     // shell
 
-    // technically should never return 
+    // technically should never return? maybe it does return?
     return return_val;
 }
 
@@ -382,18 +397,17 @@ int32_t sys_open (const uint8_t* filename){
             fd_entry.fops_ptr = filesys_table;
             break;
     }
+    
+    /* Make actual open call and return */
+    if(0 != fd_entry.fops_ptr.open(filename)) return -1;
+
     /* Set up remaining fields for our fda entry */
     fd_entry.inode = test_dentry.inode_num;
     fd_entry.file_position = 0;
     fd_entry.flags = IN_USE;
-    
-    /* Make actual open call and return */
-    if(0 != fd_entry.fops_ptr.open(filename))
-        return -1;
 
     /* Finally set entry in fda for curr_pcb */
     curr_pcb->fda[fd_idx] = fd_entry;
-    //return 0;
     return fd_idx;
 }
 
@@ -439,7 +453,14 @@ int32_t sys_getargs (uint8_t* buf, int32_t nbytes){
     if (nbytes <= 0) return -1;
 
     pcb_t *curr_pcb = get_pcb_ptr();
-    memcpy(buf, curr_pcb->args, nbytes);
+
+    // uint8_t* test = buf;
+    // uint8_t* arguments = curr_pcb->args;
+
+    // https://stackoverflow.com/questions/38255212/is-it-bad-practice-to-use-memcpy-over-strncpy-or-similar?noredirect=1&lq=1
+    // memcpy(buf, curr_pcb->args, nbytes);
+    strncpy((int8_t*)buf, (int8_t*)(curr_pcb->args), nbytes);
+
     return 0;
 }
 
@@ -449,13 +470,22 @@ int32_t sys_vidmap (uint8_t** screen_start){
 }
 
 
-/* int32_t bad_call(void)
+/* int32_t bad call functions (args depend on function type)
  * Is a bad call function because function pointer does not exist
  * Inputs: none
  * Outputs: -1 by default since bad call
  * Side Effects: none
  */
-int32_t bad_call(void){
+int32_t bad_open(const uint8_t* filename){
+    return -1;
+}
+int32_t bad_read(int32_t fd, void* buf, int32_t nbytes){
+    return -1;
+}
+int32_t bad_write(int32_t fd, const void* buf, int32_t nbytes){
+    return -1;
+}
+int32_t bad_close(int32_t fd){
     return -1;
 }
 

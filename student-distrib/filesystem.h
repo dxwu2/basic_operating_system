@@ -66,13 +66,13 @@ uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t leng
 
 /* local functions - function params based on declarations in ece391syscall.h */
 uint32_t init_file_system(uint32_t fs_start, uint32_t fs_end);
-uint32_t file_open(const uint8_t* filename);
-uint32_t file_close(uint32_t fd);
-uint32_t file_read(uint32_t fd, void* buf, uint32_t nbytes);
-uint32_t file_write(uint32_t fd, void* buf, uint32_t nbytes);
-uint32_t dir_open(const int8_t* filename);
-uint32_t dir_close(uint32_t fd);
-uint32_t dir_read(uint32_t fd, void* buf, uint32_t nbytes);
-uint32_t dir_write(uint32_t fd, void* buf, uint32_t nbytes);
+int32_t file_open(const uint8_t* filename);
+int32_t file_close(int32_t fd);
+int32_t file_read(int32_t fd, void* buf, int32_t nbytes);
+int32_t file_write(int32_t fd, const void* buf, int32_t nbytes);
+int32_t dir_open(const uint8_t* filename);
+int32_t dir_close(int32_t fd);
+int32_t dir_read(int32_t fd, void* buf, int32_t nbytes);
+int32_t dir_write(int32_t fd, const void* buf, int32_t nbytes);
 
 #endif
