@@ -210,8 +210,10 @@ int32_t file_write(int32_t fd, const void* buf, int32_t nbytes){
  * Outputs  : 0
  */
 int32_t dir_open(const uint8_t* filename){
+    /*
     dentry_t* cur_dentry;
     read_dentry_by_name((int8_t*)filename, cur_dentry);
+    */
     return 0;
 }
 

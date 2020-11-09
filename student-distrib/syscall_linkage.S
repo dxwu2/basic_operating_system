@@ -5,9 +5,14 @@
 # Inputs   : none
 # Outputs  : none
 SYSTEM_CALL_WRAPPER:
-    cli             # begin critical section
-    pushfl          # pushing all flags
-    pushl %edx      # push argument registers for system call
+
+    cli
+    pushl %es
+    pushl %ds
+    pushl %ebp
+    pushl %edi
+    pushl %esi
+    pushl %edx
     pushl %ecx
     pushl %ebx
     sti
@@ -25,10 +30,14 @@ invalid_idx:
     orl $0xFFFFFFFF, %EAX       # store -1 in EAX if invalid index to system call
 
 cleanup_call:
-    popl %ebx   # popping all caller-saved registers
+    popl %ebx
     popl %ecx
     popl %edx
-    popfl       # popping all flags
+    popl %esi
+    popl %edi
+    popl %ebp
+    popl %ds
+    popl %es
     # sti         # end critical section
     iret        # per osdev, need iret since interrupt context
 
