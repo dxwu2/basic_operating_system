@@ -1,4 +1,5 @@
 #include "exceptions.h"
+#include "syscall.h"
 
 /* array of exception messages indexed by vector created 
 *  based on titles of exceptions in IA-32 manual section 5.14
@@ -35,6 +36,33 @@ const char* exception_msgs[20] = {
 void handle_exception(unsigned vec){
     clear();
     printf("Interrupt vector 0x%x -- %s\n", vec, exception_msgs[vec]);
+
+    // if page fault, I want to print out the stack and CR2
+    int ESP;
+    int CR2;
+    int DS;
+
+    // save registers into variables
+    asm volatile(
+        "movl %%esp, %0;"
+        "movl %%cr2, %1;"
+        "mov %%ds, %2;"
+        
+        : "=r" (ESP), "=r" (CR2), "r=" (DS)
+    );
+
+    printf("ESP: %x\n", ESP);
+    printf("CR2: %x\n", CR2);
+
+    // check if user exception - if so, must halt
+    // 3 sig bit represents U/S (from ESP, per Intel Manual page 188) - if this bit = 1, its user mode
+    // need to mask by AND 0x4, rshifting twice
+    int test = ((ESP & 0x4) >> 2);
+    if(test == 1){
+        exception_flag = 1;     // make sys_halt aware that this was an exception
+        sys_halt(255);          // random number, won't matter since exception flag
+    }
+
     while(1);
 }
 

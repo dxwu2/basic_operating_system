@@ -48,7 +48,16 @@ void syscall_init() {
  * 
  */
 int32_t sys_halt (uint8_t status){
-    // call sti since we called cli in execute
+    int32_t return_val;
+
+    // meaning an exception on user side was generated -> squash!
+    if(exception_flag == 1){
+        exception_flag = 0;
+        return_val = 256;       // also need to return 256
+    }
+    else{
+        return_val = (int32_t)status;       // just return normal status
+    }
 
     pcb_t* curr_pcb = get_pcb_from_pid(curr_pid);
 
@@ -70,12 +79,18 @@ int32_t sys_halt (uint8_t status){
         curr_pcb->fda[i].flags = NOT_IN_USE;
     }
 
+    // if first shell, restart a new one
+    if(curr_pid == 0){
+        sys_execute((uint8_t*)"shell");
+    }
+
     // restore parent paging
     // pcb_t* parent_pcb = curr_pcb->parent_pcb;
     map_user_program(curr_pcb->parent_pid);
     
     // restore tss values and EBP/ESP values
     tss.esp0 = curr_pcb->old_esp;
+    tss.ss0 = KERNEL_DS;        // unsure if this is needed? halt worked fine without
 
     // restore pcb
     curr_pid = curr_pcb->parent_pid;
@@ -90,7 +105,7 @@ int32_t sys_halt (uint8_t status){
         // "ret;"
         
         : // no outputs
-        : "r"((uint32_t)status), "r"(curr_pcb->old_ebp), "r"(curr_pcb->old_esp)       // we booling now
+        : "r"((int32_t)return_val), "r"(curr_pcb->old_ebp), "r"(curr_pcb->old_esp)       // we booling now
         // : "eax"
     );
 
@@ -281,7 +296,7 @@ int32_t sys_execute (const uint8_t* command){
     // 5 things
     // shell
 
-    // technically should never return 
+    // technically should never return? maybe it does return?
     return return_val;
 }
 
@@ -438,7 +453,14 @@ int32_t sys_getargs (uint8_t* buf, int32_t nbytes){
     if (nbytes <= 0) return -1;
 
     pcb_t *curr_pcb = get_pcb_ptr();
-    memcpy(buf, curr_pcb->args, nbytes);
+
+    // uint8_t* test = buf;
+    // uint8_t* arguments = curr_pcb->args;
+
+    // https://stackoverflow.com/questions/38255212/is-it-bad-practice-to-use-memcpy-over-strncpy-or-similar?noredirect=1&lq=1
+    // memcpy(buf, curr_pcb->args, nbytes);
+    strncpy((int8_t*)buf, (int8_t*)(curr_pcb->args), nbytes);
+
     return 0;
 }
 

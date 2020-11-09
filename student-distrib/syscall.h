@@ -111,5 +111,7 @@ pcb_t* get_pcb_ptr();
 // gets a pcb_t pointer from the pid
 pcb_t* get_pcb_from_pid(int pid);
 
+// flag to check if exception was raised by user
+volatile int exception_flag;
 
 #endif
