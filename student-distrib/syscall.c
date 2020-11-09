@@ -397,18 +397,18 @@ int32_t sys_open (const uint8_t* filename){
             fd_entry.fops_ptr = filesys_table;
             break;
     }
+    
+    /* Make actual open call and return */
+    if(0 != fd_entry.fops_ptr.open(filename)) return -1;
+
     /* Set up remaining fields for our fda entry */
     fd_entry.inode = test_dentry.inode_num;
     fd_entry.file_position = 0;
     fd_entry.flags = IN_USE;
-    
-    /* Make actual open call and return */
-    if(0 != fd_entry.fops_ptr.open(filename))
-        return -1;
 
     /* Finally set entry in fda for curr_pcb */
     curr_pcb->fda[fd_idx] = fd_entry;
-    return 0;
+    return fd_idx;
 }
 
 /* int32_t sys_close (int32_t fd)
