@@ -68,7 +68,7 @@ uint32_t read_dentry_by_name (const int8_t* fname, dentry_t* dentry){
  * Outputs  : returns 0 on success, -1 on failure (non-existent file or invalid index)
  */
 uint32_t read_dentry_by_index (uint32_t index, dentry_t* dentry){
-    int i;
+    // int i;
     /* Check if filesystem initialized */
     if(!the_boot_block)
         return -1;
@@ -76,12 +76,13 @@ uint32_t read_dentry_by_index (uint32_t index, dentry_t* dentry){
     if((index < 0) || (index >= the_boot_block->dir_entry_count) || (!dentry))
         return -1;
     /* Set dentry based on index otherwise */
-    for(i = 0; i < FILENAME_LEN; i++){
-        dentry->filename[i] = the_boot_block->direntries[index].filename[i];
-    }
-    // dentry->filename[32] = '\0';
-    dentry->filetype = the_boot_block->direntries[index].filetype;
-    dentry->inode_num = the_boot_block->direntries[index].inode_num;
+    *dentry = the_boot_block->direntries[index];
+    // for(i = 0; i < FILENAME_LEN; i++){
+    //     dentry->filename[i] = the_boot_block->direntries[index].filename[i];
+    // }
+    // // dentry->filename[32] = '\0';
+    // dentry->filetype = the_boot_block->direntries[index].filetype;
+    // dentry->inode_num = the_boot_block->direntries[index].inode_num;
     return 0;
 }
 
@@ -237,16 +238,16 @@ int32_t dir_close(int32_t fd){
  */
 int32_t dir_read(int32_t fd, void* buf, int32_t nbytes){
     dentry_t test_dentry;
-    int8_t* buf2;
-
-    int i;
-    for (i = 0; i < 33; i++) {
-        buf2[i] = '/0';
-    }
+    // int8_t buf2[33];
+    // int i;
+    // for (i = 0; i < 33; i++){
+    //     buf2[i] = '\0';
+    // }
     /* Use global file index to access next dir entry */
 	if(!read_dentry_by_index(global_file_index, &test_dentry)){
+        /* Truncate fname_len to 32 bytes if necessary */
 		int8_t fname_len = (strlen(test_dentry.filename) > FILENAME_LEN) ? FILENAME_LEN : strlen(test_dentry.filename);
-        strncpy(buf2, test_dentry.filename, fname_len);
+        // strncpy(&buf2, test_dentry.filename, fname_len);
         strncpy((void*)buf, (int8_t*)test_dentry.filename, fname_len);
 		// use of global variable to keep track of which file we are on (which index)
         global_file_index++;
