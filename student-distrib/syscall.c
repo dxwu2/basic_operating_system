@@ -464,8 +464,16 @@ int32_t sys_getargs (uint8_t* buf, int32_t nbytes){
     return 0;
 }
 
-
+/* int32_t sys_vidmap (uint8_t** screen_start)
+ * Mps the text-mode video memory into user space at a pre-set virtual address
+ * Inputs: uint8_t** screen_start - 
+ * Outputs: address
+ *          -1 if location is invalid
+ * Side Effects: Does a lot of stuff
+ */
 int32_t sys_vidmap (uint8_t** screen_start){
+    // just check whether the address falls within the address range covered by the single user-level page
+    // NOTE: requires us to add anohter page mapping for the program (4kB page)
     return 0;
 }
 
