@@ -254,7 +254,7 @@ int32_t dir_read(int32_t fd, void* buf, int32_t nbytes){
         return fname_len;
 	} else {
         global_file_index = 0;
-        return -1;
+        return 0;
     }
 }
 
