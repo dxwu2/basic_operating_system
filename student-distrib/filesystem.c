@@ -52,11 +52,11 @@ uint32_t read_dentry_by_name (const int8_t* fname, dentry_t* dentry){
     /* scan through dentries in boot block to find fname */
     for(i = 0; i < NUM_DIRENTRIES; i++){
         dentry_t* potential_dentry = &(the_boot_block->direntries[i]);
+        //make sure filenames are same length
         if (strlen(fname) != strlen(potential_dentry->filename))
             continue;
         //check length of filename for potential dentry and truncate to 32 bytes if necessary
         int8_t fname_len = (strlen(potential_dentry->filename) > FILENAME_LEN) ? FILENAME_LEN : strlen(potential_dentry->filename);
-        // int8_t fname_len = (strlen(fname) > FILENAME_LEN) ? FILENAME_LEN : strlen(fname);
         if(!strncmp(fname, potential_dentry->filename, fname_len)){
             *dentry = *potential_dentry;
             return 0;
@@ -241,16 +241,10 @@ int32_t dir_close(int32_t fd){
  */
 int32_t dir_read(int32_t fd, void* buf, int32_t nbytes){
     dentry_t test_dentry;
-    // int8_t buf2[33];
-    // int i;
-    // for (i = 0; i < 33; i++){
-    //     buf2[i] = '\0';
-    // }
     /* Use global file index to access next dir entry */
 	if(!read_dentry_by_index(global_file_index, &test_dentry)){
         /* Truncate fname_len to 32 bytes if necessary */
 		int8_t fname_len = (strlen(test_dentry.filename) > FILENAME_LEN) ? FILENAME_LEN : strlen(test_dentry.filename);
-        // strncpy(&buf2, test_dentry.filename, fname_len);
         strncpy((void*)buf, (int8_t*)test_dentry.filename, fname_len);
 		// use of global variable to keep track of which file we are on (which index)
         global_file_index++;
