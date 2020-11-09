@@ -68,6 +68,7 @@ uint32_t read_dentry_by_name (const int8_t* fname, dentry_t* dentry){
  * Outputs  : returns 0 on success, -1 on failure (non-existent file or invalid index)
  */
 uint32_t read_dentry_by_index (uint32_t index, dentry_t* dentry){
+    int i;
     /* Check if filesystem initialized */
     if(!the_boot_block)
         return -1;
@@ -75,7 +76,12 @@ uint32_t read_dentry_by_index (uint32_t index, dentry_t* dentry){
     if((index < 0) || (index >= the_boot_block->dir_entry_count) || (!dentry))
         return -1;
     /* Set dentry based on index otherwise */
-    *dentry = the_boot_block->direntries[index];
+    for(i = 0; i < FILENAME_LEN; i++){
+        dentry->filename[i] = the_boot_block->direntries[index].filename[i];
+    }
+    // dentry->filename[32] = '\0';
+    dentry->filetype = the_boot_block->direntries[index].filetype;
+    dentry->inode_num = the_boot_block->direntries[index].inode_num;
     return 0;
 }
 
@@ -210,8 +216,8 @@ int32_t file_write(int32_t fd, const void* buf, int32_t nbytes){
  * Outputs  : 0
  */
 int32_t dir_open(const uint8_t* filename){
-    dentry_t* cur_dentry;
-    read_dentry_by_name((int8_t*)filename, cur_dentry);
+    // dentry_t* cur_dentry;
+    // read_dentry_by_name((int8_t*)filename, cur_dentry);
     return 0;
 }
 
@@ -230,11 +236,20 @@ int32_t dir_close(int32_t fd){
  * Outputs  : >= 0 on success, -1 on failure
  */
 int32_t dir_read(int32_t fd, void* buf, int32_t nbytes){
-    // use of global variable to keep track of which file we are on (which index)
-    global_file_index = fd;
-    /* use read_dentry_by_index */
-    read_dentry_by_index(fd, buf);
-    return 0;
+    dentry_t test_dentry;
+    int8_t* buf2;
+    /* Use global file index to access next dir entry */
+	if(!read_dentry_by_index(global_file_index, &test_dentry)){
+		int8_t fname_len = (strlen(test_dentry.filename) > FILENAME_LEN) ? FILENAME_LEN : strlen(test_dentry.filename);
+        strncpy(buf2, test_dentry.filename, fname_len);
+        strncpy((void*)buf, (int8_t*)test_dentry.filename, fname_len);
+		// use of global variable to keep track of which file we are on (which index)
+        global_file_index++;
+        return 0;
+	} else {
+        global_file_index = 0;
+        return -1;
+    }
 }
 
 /* dir_write - should do nothing
