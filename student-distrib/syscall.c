@@ -554,7 +554,11 @@ pcb_t* get_pcb_ptr(void){
     return curr_ptr;
 }
 
-/* pcb_t - write a get pcb from pid function. also, when setting flags in line 444, not the same as the pcb addr in sys write */
+/* get_pcb_from_pid(int pid)
+ * Gets a pointer to the pcb corresponding to a pid
+ * Inputs   : pid
+ * Outputs  : a pcb pointer
+ */
 pcb_t* get_pcb_from_pid(int pid) {
     pcb_t* pcb_ptr;
     pcb_ptr = (pcb_t*)(EIGHT_MB - (pid + 1) * EIGHT_KB);
