@@ -360,7 +360,7 @@ int32_t sys_write (int32_t fd, void* buf, int32_t nbytes){
  * Checks for valid filename input; Find empty entry in fda for pcb and initialize fd entry; call proper open() function ptr
  * Inputs:  const uint8_t* filename - name of file to open and create fd entry for
  * Outputs: -1 if invalid argument/entry does not exist, no empty entry in fda, or unsuccessful open() fptr call
- *           0 otherwise
+ *           return fd index of new fd entry opened otherwise
  * Side Effects: Opens filename and sets up fda entry for pcb for this file descriptor
  */
 int32_t sys_open (const uint8_t* filename){

@@ -7,11 +7,7 @@
 SYSTEM_CALL_WRAPPER:
 
     cli
-    pushl %es
-    pushl %ds
-    pushl %ebp
-    pushl %edi
-    pushl %esi
+    pushl %eflags
     pushl %edx
     pushl %ecx
     pushl %ebx
@@ -33,11 +29,7 @@ cleanup_call:
     popl %ebx
     popl %ecx
     popl %edx
-    popl %esi
-    popl %edi
-    popl %ebp
-    popl %ds
-    popl %es
+    popl %eflags
     # sti         # end critical section
     iret        # per osdev, need iret since interrupt context
 
