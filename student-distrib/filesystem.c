@@ -250,10 +250,10 @@ int32_t dir_read(int32_t fd, void* buf, int32_t nbytes){
         strncpy((void*)buf, (int8_t*)test_dentry.filename, fname_len);
 		// use of global variable to keep track of which file we are on (which index)
         global_file_index++;
-        return 0;
+        return fname_len;
 	} else {
         global_file_index = 0;
-        return -1;
+        return 0;
     }
 }
 
