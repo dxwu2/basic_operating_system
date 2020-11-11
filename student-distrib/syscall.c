@@ -48,6 +48,7 @@ void syscall_init() {
  * 
  */
 int32_t sys_halt (uint8_t status){
+    // cli();
     int32_t return_val;
 
     // meaning an exception on user side was generated -> squash!
@@ -95,11 +96,15 @@ int32_t sys_halt (uint8_t status){
     // restore pcb
     curr_pid = curr_pcb->parent_pid;
 
+    // // indicate the process no longer running
+    // running_flag = 0;
+
     asm volatile(
         // literally save ebp and esp into (free to clobber) registers
         "movl %0, %%eax;"
         "movl %1, %%ebp;"
         "movl %2, %%esp;"
+        // "sti;"
         "jmp RETURN_FROM_HALT;"
         // "leave;"
         // "ret;"
@@ -202,6 +207,11 @@ int32_t sys_execute (const uint8_t* command){
     }
     // if pid = 0, first shell -> tell keyboard
     shell_flag = 1;
+
+    // tell keyboard that another process is running
+    if(pid != 0){
+        running_flag = 1;
+    }
 
     // map user program
     map_user_program(pid);

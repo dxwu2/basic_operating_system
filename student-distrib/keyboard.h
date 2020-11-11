@@ -5,7 +5,8 @@
 #define _KEYBOARD_H
 
 #include "i8259.h"
-#include "lib.h"
+// #include "lib.h"
+#include "syscall.h"
 
 #define KEYBOARD_PORT 0x60      // per OSDEV
 #define KEYBOARD_IRQ_LINE 0x1   // per wikipedia
@@ -25,12 +26,13 @@
 #define ALT_RELEASE 0xB8
 #define ENTER 0x1C
 #define L 0x26
+#define C 0x2E
 #define BACKSPACE 0x0E
 #define TAB 0x0F
 #define TAB_RELEASE 0x8F
 
 // flag indicating whether key was pressed - should be volatile
-volatile int flag;
+volatile int key_flag;
 
 // for the keyboard buffer
 char keyboard_buf[KEYBOARD_BUF_SIZE];     // need keyboard buffer -> size 128 char but last character is null '\0'
@@ -41,6 +43,9 @@ int shift_pressed;
 int ctrl_pressed;
 int caps_lock_pressed;
 int alt_pressed;
+
+// flag to check if we should call halt
+int call_halt;
 
 // indicate keyboard that shell is running
 volatile int shell_flag;

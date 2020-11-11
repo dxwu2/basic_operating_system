@@ -114,4 +114,7 @@ pcb_t* get_pcb_from_pid(int pid);
 // flag to check if exception was raised by user
 volatile int exception_flag;
 
+// flag to indicate if process is currently running (EXCEPT first shell)
+volatile int running_flag;
+
 #endif

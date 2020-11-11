@@ -108,6 +108,14 @@ void keyboard_handler(void){
     // at the end send an EOI
     send_eoi(KEYBOARD_IRQ_LINE);
     sti();
+
+    // if CTRL+C and process (par 1st shell) is running, cancel that
+    if(running_flag == 1 && call_halt == 1){
+        // indicate the process no longer running
+        running_flag = 0;
+        call_halt = 0;
+        sys_halt(-1);
+    }
 }
 
 /*
@@ -148,6 +156,11 @@ void process_key(uint8_t scancode){
             if(shell_flag == 1){
                 printf("391OS> ");
             }
+        }
+        // cancel current program
+        if(scancode == C){
+            // sys_halt(-1);       // -1 since we are terminating process before it can finish
+            call_halt = 1;
         }
         return;
     }
@@ -263,6 +276,6 @@ void keyboard_return(void){
     buf_idx++;      // not necessary but kept for debugging -> gets reset anyway
     
     // tell terminal driver that '\n' was pressed
-    flag = 1;
+    key_flag = 1;
     // clear_keyboard_buf();       // need to clear the buffer at the end
 }
