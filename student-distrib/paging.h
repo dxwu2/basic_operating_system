@@ -15,7 +15,8 @@
 
 #define FOUR_MB_OFFSET      1024        // 4MB has a difference of 1024 when right shifted by 12 (used in map_user_prog)
 #define FOUR_KB             0x1000
-#define ONE32_MB            0x8400000
+#define FOUR_MB             0x400000
+
 /* struct for Page Directory Entries */
 typedef struct pde {
     /* using union and struct here gives us the option to use both between 4MB and 4kB pages */

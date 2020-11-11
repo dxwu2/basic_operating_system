@@ -477,12 +477,13 @@ int32_t sys_getargs (uint8_t* buf, int32_t nbytes){
 int32_t sys_vidmap (uint8_t** screen_start){
     // just check whether the address falls within the address range covered by the single user-level page
     // NOTE: requires us to add anohter page mapping for the program (4kB page)
+    /* Make sure screen_start is within virtual addr range for user-level page (128-132MB) */
     if(screen_start < (uint8_t**) ONE28_MB || screen_start >= (uint8_t**) ONE32_MB)  return -1;
     map_vidmem(screen_start, curr_pid);
-    
-    screen_start = (uint8_t**) ONE32_MB;
 
-    return ONE32_MB;
+    // screen_start = (uint8_t**) ONE32_MB;
+    (*screen_start) = (uint8_t *) ((184+curr_pid+1) * FOUR_KB); //assign the address to screen start
+    return 0;
 }
 
 
