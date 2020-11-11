@@ -327,8 +327,21 @@ int32_t sys_read (int32_t fd, void* buf, int32_t nbytes){
     if (curr_pcb->fda[fd].flags == NOT_IN_USE)
         return -1;
 
-    return curr_pcb->fda[fd].fops_ptr.read(fd, buf, nbytes);
-    //return 0;
+    /* Check if file position of fd is at or beyond end of file */
+    uint32_t i = curr_pcb->fda[fd].inode;
+    uint32_t file_length = ((inode_t*)(fs_start_addr + (i + 1) * BLOCK_SIZE))->length;
+    /* Return 0 if file_position at or beyond length of file */
+    if (curr_pcb->fda[fd].file_position >= file_length){
+        return 0;
+    }
+    /* Perform read and update fd file position*/
+    int32_t bytes_read = curr_pcb->fda[fd].fops_ptr.read(fd, buf, nbytes);
+    /*Only update file position if it is a traditional filetype (not rtc or stdin/stdout) */
+    if(curr_pcb->fda[fd].fops_ptr.read == file_read){
+        curr_pcb->fda[fd].file_position += bytes_read;
+    }
+
+    return bytes_read;
 }
 
 /* int32_t sys_write(int32_t fd, void* buf, int32_t nbytes)
