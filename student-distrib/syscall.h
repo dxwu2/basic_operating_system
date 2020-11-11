@@ -19,6 +19,9 @@
 #define NOT_IN_USE  0
 
 #define PCB_MASK 0xFFFFE000 // x2000 => 0010 0000 0000 0000 -> bit mask: 1110 0000 0000 0000  (because 32-13=19, need top 19 bits to identify)
+#define FOUR_MB     0x400000
+#define ONE28_MB    0x8000000
+#define ONE32_MB    0x8400000
 #define EIGHT_MB    0x800000
 #define EIGHT_KB    0x2000
 

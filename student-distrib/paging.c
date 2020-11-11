@@ -119,3 +119,19 @@ void map_user_program(int pid) {
     /* flush the tlb */
     flush_tlb();
 }
+
+void map_vidmem(uint8_t** screen_start, int pid){
+    // index 33 because we need to place somewhere after process memory (128-132MB)
+    page_directory[33].P = 1;   // mark as present
+    // must be user level access -> but might already be set
+    page_directory[33].U = 1;   // accessible by all
+    // R/W accessible
+    page_directory[33].R = 1;
+    page_directory[33].S = 0;
+    page_directory[33].offset31_12 = ((uint32_t) page_table >> ADDRESS_SHIFT_KB) & 0xFFF;
+    page_table[0].offset31_12 = (uint32_t)((VIDMEM_ADDRESS + (FOUR_KB * pid)) >> ADDRESS_SHIFT_KB);    // set bits 31-12 to address of page table (right shifted)
+    //screen_start = (uint8_t**)((VIDMEM_ADDRESS + (FOUR_KB * pid)) >> ADDRESS_SHIFT_KB);
+
+    /* flush the tlb */
+    flush_tlb();
+}
