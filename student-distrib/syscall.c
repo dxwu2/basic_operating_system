@@ -200,9 +200,6 @@ int32_t sys_execute (const uint8_t* command){
             return -1;
         }
     }
-    // if pid = 0, first shell -> tell keyboard
-    shell_flag = 1;
-
     // map user program
     map_user_program(pid);
 
