@@ -495,7 +495,7 @@ int32_t sys_vidmap (uint8_t** screen_start){
     map_vidmem(screen_start, curr_pid);
 
     *screen_start = (uint8_t*) ONE32_MB;
-    // (*screen_start) = (uint8_t *) ((184+curr_pid+1) * FOUR_KB); //assign the address to screen start
+    // *screen_start = (uint8_t *) ((VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB)+ curr_pid + 1) * FOUR_KB)); //assign the address to screen start
     return 0;
 }
 

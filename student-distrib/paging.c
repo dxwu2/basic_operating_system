@@ -127,13 +127,15 @@ void map_vidmem(uint8_t** screen_start, int pid){
     page_directory[33].U = 1;   // accessible by all
     // R/W accessible
     page_directory[33].R = 1;
-    page_directory[33].S = 0;
+    page_directory[33].S = 0;  //switching this bit to 0 causes page fault???
     page_directory[33].offset31_12 = ((uint32_t) page_table >> ADDRESS_SHIFT_KB) & 0xFFF;
 
-    page_table[(VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) + (pid+1)].P = 1;
-    page_table[(VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) + (pid+1)].U = 1;
-    // page_table[0].offset31_12 = (uint32_t)((FOUR_MB - (FOUR_KB * (pid+1))) >> ADDRESS_SHIFT_KB);    // set bits 31-12 to address of page table (right shifted)
-    page_table[(VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) + (pid+1)].offset31_12 = (uint32_t)((VIDMEM_ADDRESS + (FOUR_KB * (pid+1))) >> ADDRESS_SHIFT_KB); 
+    // page_table[(VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) + (pid+1)].P = 1;
+    // page_table[(VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) + (pid+1)].U = 1;
+    // page_table[VIDMEM_ADDRESS + (pid + 1)].offset31_12 = (uint32_t)((FOUR_MB - (FOUR_KB * (pid+1))) >> ADDRESS_SHIFT_KB);    // set bits 31-12 to address of page table (right shifted)
+    page_table[(VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) + (pid+1)].U = 0;
+    page_table[(VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) + (pid+1)].offset31_12 = (uint32_t)((VIDMEM_ADDRESS + (FOUR_KB * (pid + 1))) >> ADDRESS_SHIFT_KB); 
+    
     //screen_start = (uint8_t**)((VIDMEM_ADDRESS + (FOUR_KB * pid)) >> ADDRESS_SHIFT_KB);
 
     /* flush the tlb */
