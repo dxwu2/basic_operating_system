@@ -331,7 +331,7 @@ int32_t sys_read (int32_t fd, void* buf, int32_t nbytes){
     uint32_t i = curr_pcb->fda[fd].inode;
     uint32_t file_length = ((inode_t*)(fs_start_addr + (i + 1) * BLOCK_SIZE))->length;
     /* Return 0 if file_position at or beyond length of file */
-    if (curr_pcb->fda[fd].file_position >= file_length){
+    if (curr_pcb->fda[fd].file_position >= file_length && file_length != 0){
         return 0;
     }
     /* Perform read and update fd file position*/
