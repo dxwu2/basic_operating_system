@@ -1,6 +1,7 @@
 /* filesystem.c - sets up filesystem, includes some other functions regarding fs */
 
 #include "filesystem.h"
+#include "syscall.h"
 #include "lib.h"
 
 /* local static for boot block */
@@ -200,8 +201,24 @@ int32_t file_close(int32_t fd){
  * 
  */ 
 int32_t file_read(int32_t fd, void* buf, int32_t nbytes){
-    /* use read_data */
-    return read_data(global_inode_index, 0, buf, nbytes);   // start at offset 0 because we want the whole file
+    /* Fetch inode idx and offset into file using fda array*/
+    pcb_t* curr_pcb = get_pcb_ptr();
+    uint32_t offset = curr_pcb->fda[fd].file_position;
+
+    /* Check if file position of fd is at or beyond end of file */
+    uint32_t i = curr_pcb->fda[fd].inode;
+    uint32_t file_length = ((inode_t*)(fs_start_addr + (i + 1) * BLOCK_SIZE))->length;
+    /* Return 0 if file_position at or beyond length of file */
+    if (offset >= file_length && file_length != 0){
+        return 0;
+    }
+    
+    uint32_t bytes_read = read_data(i, offset, buf, nbytes);   // start at offset 0 because we want the whole file
+    /*Update file position */
+    curr_pcb->fda[fd].file_position += bytes_read;
+
+    /* call read_data with args */
+    return bytes_read;   // start at offset 0 because we want the whole file
 }
 
 /* file_write - doesn't do anything for this checkpoint
