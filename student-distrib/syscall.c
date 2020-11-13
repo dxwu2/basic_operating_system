@@ -464,8 +464,16 @@ int32_t sys_getargs (uint8_t* buf, int32_t nbytes){
     return 0;
 }
 
-
+/* int32_t sys_vidmap (uint8_t** screen_start)
+ * Mps the text-mode video memory into user space at a pre-set virtual address
+ * Inputs: uint8_t** screen_start - 
+ * Outputs: address
+ *          -1 if location is invalid
+ * Side Effects: Does a lot of stuff
+ */
 int32_t sys_vidmap (uint8_t** screen_start){
+    // just check whether the address falls within the address range covered by the single user-level page
+    // NOTE: requires us to add anohter page mapping for the program (4kB page)
     return 0;
 }
 
@@ -554,6 +562,7 @@ pcb_t* get_pcb_ptr(void){
     return curr_ptr;
 }
 
+/* pcb_t - write a get pcb from pid function. also, when setting flags in line 444, not the same as the pcb addr in sys write */
 /* get_pcb_from_pid(int pid)
  * Gets a pointer to the pcb corresponding to a pid
  * Inputs   : pid
