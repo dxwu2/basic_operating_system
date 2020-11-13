@@ -126,9 +126,11 @@ uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t leng
     uint32_t* cur_datablock = start_datablocks + cur_datablock_index * BLOCK_SIZE/sizeof(uint32_t);
 
     /* setup for looping */
-    uint32_t position_in_file = offset % BLOCK_SIZE;
+    uint32_t position_in_file = (offset % BLOCK_SIZE)/4;
+    //uint32_t offset_in_address = offset % 4;    // each address contains 4 bytes, we need offset in address of starting point
 
     /* loop through data and read to buffer */
+    
     uint32_t bytes_read;
     for (bytes_read = 0; bytes_read < length; bytes_read += 4) {
         // each value in buffer is only 1B, but we read 4B at a time (in little endian format):
@@ -142,7 +144,7 @@ uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t leng
         buf[bytes_read + 3] = test01;
 
         position_in_file++;
-        /* if we reach end of current data block */
+        // if we reach end of current data block
         // we increment position_in_file only once every 4 bytes
         if (position_in_file >= BLOCK_SIZE/4) {
             position_in_file = 0;   // reset position in file
@@ -150,13 +152,51 @@ uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t leng
             cur_datablock_index = (uint32_t)((inode_t*) i)->data_block_num[num_data_block];
             cur_datablock = start_datablocks + cur_datablock_index * BLOCK_SIZE/sizeof(uint32_t);
         }
-        /* if we reach EOF (each inode can hold up to 1023 data blocks, and its 0-indexed so 0-1022) */
+        // if we reach EOF (each inode can hold up to 1023 data blocks, and its 0-indexed so 0-1022) 
+        if (num_data_block > NUM_DATA_BLOCKS - 1) {
+            return 0;
+        }
+    }
+    return bytes_read;       // divide by 4 because we want the number of bytes read, and there are 4 characters per byte
+}
+
+    // clear buffer
+    /*
+    int j;
+    for (j = 0; j < 1024; j++) {
+        buf[j] = '\0';
+    }
+    */
+/*
+    uint32_t bytes_read; // technically should be characters read
+    for (bytes_read = 0; bytes_read < length; bytes_read += 4) {
+        // each value in buffer is only 1B, but we read 4B at a time (in little endian format):
+        uint32_t test01 = (*(cur_datablock + position_in_file)) >> 24;              // we want leftmost byte
+        uint32_t test02 = ((*(cur_datablock + position_in_file)) >> 16) & 0xFF;     // we want second byte
+        uint32_t test03 = ((*(cur_datablock + position_in_file)) >> 8) & 0xFF;      // we want third byte
+        uint32_t test04 = ((*(cur_datablock + position_in_file))) & 0xFF;           // we want rightmost byte
+        buf[bytes_read] = test04;
+        buf[bytes_read + 1] = test03;
+        buf[bytes_read + 2] = test02;
+        buf[bytes_read + 3] = test01;
+
+        position_in_file++;
+        // if we reach end of current data block //
+        // we increment position_in_file only once every 4 bytes
+        if (position_in_file >= BLOCK_SIZE/4) {
+            position_in_file = 0;   // reset position in file
+            num_data_block++;
+            cur_datablock_index = (uint32_t)((inode_t*) i)->data_block_num[num_data_block];
+            cur_datablock = start_datablocks + cur_datablock_index * BLOCK_SIZE/sizeof(uint32_t);
+        }
+        // if we reach EOF (each inode can hold up to 1023 data blocks, and its 0-indexed so 0-1022) //
         if (num_data_block > NUM_DATA_BLOCKS - 1) {
             return 0;
         }
     }
     return bytes_read;
 }
+    */
 
 
 /* Local functions defined
@@ -203,7 +243,8 @@ int32_t file_close(int32_t fd){
 int32_t file_read(int32_t fd, void* buf, int32_t nbytes){
     /* Fetch inode idx and offset into file using fda array*/
     pcb_t* curr_pcb = get_pcb_ptr();
-    uint32_t offset = curr_pcb->fda[fd].file_position;
+    //uint32_t offset = curr_pcb->fda[fd].file_position;
+    uint32_t offset = (curr_pcb->fda[fd].file_position);    // offset is in terms of chars, NOT bytes (hence the times 4)
 
     /* Check if file position of fd is at or beyond end of file */
     uint32_t i = curr_pcb->fda[fd].inode;
