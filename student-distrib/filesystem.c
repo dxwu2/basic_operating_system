@@ -119,7 +119,8 @@ uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t leng
     //uint32_t* cur_datablock_index_addr = (uint32_t*)((inode_t*) i)->data_block_num[num_data_block]; // addr
     uint32_t* cur_datablock_index_addr = i + 1;     // add 1 (uint32_t, so 1 = 4B) to get us address at 0th data block number (in inode)
     // apply offset
-    cur_datablock_index_addr += (offset/BLOCK_SIZE) * 4;       // each data block index is 4B (diagram), division is floored in C
+    //cur_datablock_index_addr += (offset/BLOCK_SIZE) * 4;       // each data block index is 4B (diagram), division is floored in C -> NOT TIMES FOUR IMMA IDIOT
+    cur_datablock_index_addr += (offset/BLOCK_SIZE);       // each data block index is 4B (diagram), division is floored in C
     uint32_t cur_datablock_index = *cur_datablock_index_addr;
     num_data_block = (offset/BLOCK_SIZE);
     // get the actual data block's addr
