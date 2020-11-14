@@ -53,11 +53,15 @@ uint32_t read_dentry_by_name (const int8_t* fname, dentry_t* dentry){
     /* scan through dentries in boot block to find fname */
     for(i = 0; i < NUM_DIRENTRIES; i++){
         dentry_t* potential_dentry = &(the_boot_block->direntries[i]);
+
+        // need to check if potential dentry has length over 32
+        int32_t fname_len = (strlen(potential_dentry->filename) > FILENAME_LEN) ? FILENAME_LEN : strlen(potential_dentry->filename);
+
         //make sure filenames are same length
-        if (strlen(fname) != strlen(potential_dentry->filename))
+        if (strlen(fname) != fname_len)
             continue;
         //check length of filename for potential dentry and truncate to 32 bytes if necessary
-        int8_t fname_len = (strlen(potential_dentry->filename) > FILENAME_LEN) ? FILENAME_LEN : strlen(potential_dentry->filename);
+        // int8_t fname_len = (strlen(potential_dentry->filename) > FILENAME_LEN) ? FILENAME_LEN : strlen(potential_dentry->filename);
         if(!strncmp(fname, potential_dentry->filename, fname_len)){
             *dentry = *potential_dentry;
             return 0;
