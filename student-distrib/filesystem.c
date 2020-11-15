@@ -137,6 +137,36 @@ uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t leng
     /* loop through data and read to buffer */
     
     uint32_t bytes_read;
+    int offset_in_address;
+    for (bytes_read = 0; bytes_read < length; bytes_read++) {
+        offset_in_address = (offset + bytes_read) % 4;     // addresses contained 4 bytes each
+        if (offset_in_address == 0) {
+            buf[bytes_read] = ((*(cur_datablock + position_in_file))) & 0xFF;       // we want rightmost byte
+        } else if (offset_in_address == 1) {
+            buf[bytes_read] = ((*(cur_datablock + position_in_file)) >> 8) & 0xFF;  // we want third byte
+        } else if (offset_in_address == 2) {
+            buf[bytes_read] = ((*(cur_datablock + position_in_file)) >> 16) & 0xFF; // we want second byte
+        } else {
+            buf[bytes_read] = (*(cur_datablock + position_in_file)) >> 24;          // we want leftmost byte
+        }
+
+        if (bytes_read % 4 == 3) {
+            position_in_file++;
+        }
+        // if we reach end of current data block
+        // we increment position_in_file only once every 4 bytes
+        if (position_in_file >= BLOCK_SIZE/4) {
+            position_in_file = 0;   // reset position in file
+            num_data_block++;
+            cur_datablock_index = (uint32_t)((inode_t*) i)->data_block_num[num_data_block];
+            cur_datablock = start_datablocks + cur_datablock_index * BLOCK_SIZE/sizeof(uint32_t);
+        }
+        // if we reach EOF (each inode can hold up to 1023 data blocks, and its 0-indexed so 0-1022) 
+        if (num_data_block > NUM_DATA_BLOCKS - 1) {
+            return 0;
+        }
+    }
+    /*
     for (bytes_read = 0; bytes_read < length; bytes_read += 4) {
         // each value in buffer is only 1B, but we read 4B at a time (in little endian format):
         uint32_t test01 = (*(cur_datablock + position_in_file)) >> 24;              // we want leftmost byte
@@ -162,6 +192,7 @@ uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t leng
             return 0;
         }
     }
+    */
     return bytes_read;       // divide by 4 because we want the number of bytes read, and there are 4 characters per byte
 }
 
@@ -248,8 +279,7 @@ int32_t file_close(int32_t fd){
 int32_t file_read(int32_t fd, void* buf, int32_t nbytes){
     /* Fetch inode idx and offset into file using fda array*/
     pcb_t* curr_pcb = get_pcb_ptr();
-    //uint32_t offset = curr_pcb->fda[fd].file_position;
-    uint32_t offset = (curr_pcb->fda[fd].file_position);    // offset is in terms of chars, NOT bytes (hence the times 4)
+    uint32_t offset = (curr_pcb->fda[fd].file_position);
 
     /* Check if file position of fd is at or beyond end of file */
     uint32_t i = curr_pcb->fda[fd].inode;

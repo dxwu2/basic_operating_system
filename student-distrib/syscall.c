@@ -468,7 +468,7 @@ int32_t sys_getargs (uint8_t* buf, int32_t nbytes){
 
 /* int32_t sys_vidmap (uint8_t** screen_start)
  * Mps the text-mode video memory into user space at a pre-set virtual address
- * Inputs: uint8_t** screen_start - 
+ * Inputs: uint8_t** screen_start - ptr to ptr to video memory
  * Outputs: address
  *          -1 if location is invalid
  * Side Effects: Does a lot of stuff
@@ -478,7 +478,8 @@ int32_t sys_vidmap (uint8_t** screen_start){
     // NOTE: requires us to add anohter page mapping for the program (4kB page)
     /* Make sure screen_start is within virtual addr range for user-level page (128-132MB) */
     if(screen_start < (uint8_t**) ONE28_MB || screen_start >= (uint8_t**) ONE32_MB)  return -1;
-    map_vidmem(screen_start, curr_pid);
+    //map_vidmem(screen_start, curr_pid);
+    map_vidmem();
 
     *screen_start = (uint8_t*) ONE32_MB;
     // *screen_start = (uint8_t *) ((VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB)+ curr_pid + 1) * FOUR_KB)); //assign the address to screen start

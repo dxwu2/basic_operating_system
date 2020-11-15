@@ -56,9 +56,11 @@ typedef struct __attribute__((packed)) pte {
 /* global variables */
 pte_t page_table[NUM_ENTRIES] __attribute__ ((aligned (PAGING_ALIGNMENT)));
 pde_t page_directory[NUM_ENTRIES] __attribute__((aligned (PAGING_ALIGNMENT)));
+pte_t vidmap_page_table[NUM_ENTRIES] __attribute__ ((aligned (PAGING_ALIGNMENT)));
 
 /* functions in paging.c */
 void init_paging(void);
 extern void flush_tlb(void);
 void map_user_program(int pid);
-void map_vidmem();
+void map_vidmem(void);
+//void map_vidmem(uint8_t** screen_start, int pid);
