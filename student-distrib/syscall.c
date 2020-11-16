@@ -140,6 +140,7 @@ int32_t sys_execute (const uint8_t* command){
     int8_t cmd[MAX_CMD_LENGTH];                 // get first command
     uint8_t args[MAX_ARGS_LENGTH];              // get following arguments
     uint8_t idx = 0;                            // to identify spaces (also to index cmd)
+    uint8_t cmd_idx = 0;
     uint8_t args_idx = 0;                       // to index args
 
     for(i = 0; i < MAX_CMD_LENGTH; i++){
@@ -147,9 +148,17 @@ int32_t sys_execute (const uint8_t* command){
         args[i] = '\0';
     }
 
+    // if leading spaces, need to move idx up until we reach a nonchar
+    if(command[0] == ' '){
+        while(command[idx] == ' '){
+            idx++;
+        }
+    }
+
+    // now proceed to copy command
     while(command[idx] != ' ' && command[idx] != '\0'){
-        cmd[idx] = command[idx];        // copy command into cmd until first space
-        idx++;
+        cmd[cmd_idx++] = command[idx++];        // copy command into cmd until first space
+        // idx++;
     }
 
     while(command[idx] == ' '){
@@ -183,7 +192,7 @@ int32_t sys_execute (const uint8_t* command){
     // now obtain program entry position (bits 24-27) - also 4 bits so we can overwrite read_buf
     // offset should be 6 since we need to start looking at 24 bytes (we originally start from 0)
     // the offset is a uint32_t, so there are 4 bytes per (24/4 => 6)
-    read_data(inode_idx, 6, read_buf, 4);              // read 4 bc only 4 bits to read
+    read_data(inode_idx, 24, read_buf, 4);              // read 4 bc only 4 bits to read
     uint32_t entry_position = (uint32_t)(read_buf[3] << 24 | read_buf[2] << 16 | read_buf[1] << 8 | read_buf[0]); // shell gives 0x080495c0 (still wrong)
     
     //uint32_t entry_position = (uint32_t)read_buf;     // make this a uint32_t pointer -> shell gives 0x7ffe24 (def wrong)
@@ -338,7 +347,6 @@ int32_t sys_read (int32_t fd, void* buf, int32_t nbytes){
         return -1;
 
     return curr_pcb->fda[fd].fops_ptr.read(fd, buf, nbytes);
-    //return 0;
 }
 
 /* int32_t sys_write(int32_t fd, void* buf, int32_t nbytes)
@@ -479,7 +487,7 @@ int32_t sys_getargs (uint8_t* buf, int32_t nbytes){
 
 /* int32_t sys_vidmap (uint8_t** screen_start)
  * Mps the text-mode video memory into user space at a pre-set virtual address
- * Inputs: uint8_t** screen_start - 
+ * Inputs: uint8_t** screen_start - ptr to ptr to video memory
  * Outputs: address
  *          -1 if location is invalid
  * Side Effects: Does a lot of stuff
@@ -487,6 +495,13 @@ int32_t sys_getargs (uint8_t* buf, int32_t nbytes){
 int32_t sys_vidmap (uint8_t** screen_start){
     // just check whether the address falls within the address range covered by the single user-level page
     // NOTE: requires us to add anohter page mapping for the program (4kB page)
+    /* Make sure screen_start is within virtual addr range for user-level page (128-132MB) */
+    if(screen_start < (uint8_t**) ONE28_MB || screen_start >= (uint8_t**) ONE32_MB)  return -1;
+    //map_vidmem(screen_start, curr_pid);
+    map_vidmem();
+
+    *screen_start = (uint8_t*) ONE32_MB;
+    // *screen_start = (uint8_t *) ((VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB)+ curr_pid + 1) * FOUR_KB)); //assign the address to screen start
     return 0;
 }
 

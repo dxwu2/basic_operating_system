@@ -35,7 +35,7 @@ int32_t terminal_read(int32_t fd, void* buf, int32_t nbytes){
     }
 
     // wait until '\n' is pressed
-    while(!flag);
+    while(!key_flag);
 
     // bytes should be the minimum between keyboard buffer length and nbytes to read
     bytes = (strlen(keyboard_buf) < nbytes) ? strlen(keyboard_buf) : nbytes;
@@ -44,7 +44,7 @@ int32_t terminal_read(int32_t fd, void* buf, int32_t nbytes){
     memcpy(buf, keyboard_buf, bytes);
 
     clear_keyboard_buf();       // need to clear the buffer at the end
-    flag = 0;                   // reset flag to prevent reading
+    key_flag = 0;                   // reset key_flag to prevent reading
     return bytes;               // return size of buffer
 }
 

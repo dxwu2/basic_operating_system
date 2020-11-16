@@ -260,7 +260,7 @@ void fs_test_list_files(){
 	dentry_t cur_dentry;
 	int i, j;
 	for (i = 0; i < 17; i++) {
-		dir_read(i, &cur_dentry, 64);
+		read_dentry_by_index(i, &cur_dentry);
 
 		/* Create name buffer to copy fname into + one extra space for null '\0' char */
 		uint8_t fname[FILENAME_LEN + 1];

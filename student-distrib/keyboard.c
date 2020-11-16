@@ -153,10 +153,23 @@ void process_key(uint8_t scancode){
             clear();                    // clear screen from lib.c
             
             // if shell is running, print 391OS>
-            if(shell_flag == 1){
+            if(shell_flag >= 1){
                 printf("391OS> ");
             }
+
+            // reprint keyboard buffer
+            // if(keyboard_buf[0] != '\0'){
+            //     int i;
+            //     for(i = 0; i < strlen(keyboard_buf); i++){
+            //         putc(keyboard_buf[i]);
+            //     }
+            // }
+            int i;
+            for(i = 0; i < strlen(keyboard_buf); i++){
+                putc(keyboard_buf[i]);
+            }
         }
+
         // cancel current program
         if(scancode == C){
             // sys_halt(-1);       // -1 since we are terminating process before it can finish

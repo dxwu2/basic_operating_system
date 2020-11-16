@@ -119,3 +119,53 @@ void map_user_program(int pid) {
     /* flush the tlb */
     flush_tlb();
 }
+
+/* void map_vidmem() - maps a new 4kB chunk in virtual memory to the original 4kB video memory page in physical address */
+
+void map_vidmem() {
+    // index 33 because we need to place somewhere after user-level process memory (132MB+)
+    page_directory[33].P = 1;   // mark as present
+    // must be user level access -> but might already be set
+    page_directory[33].U = 1;   // accessible by all
+    // R/W accessible
+    page_directory[33].R = 1;
+    page_directory[33].S = 0; 
+    page_directory[33].offset31_12 = (uint32_t)vidmap_page_table >> ADDRESS_SHIFT_KB;
+
+    vidmap_page_table[0].P = 1;
+    vidmap_page_table[0].U = 1;
+    vidmap_page_table[0].R = 1;
+    vidmap_page_table[0].offset31_12 = VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB;
+
+    flush_tlb();
+}
+
+
+/*
+void map_vidmem(uint8_t** screen_start, int pid){
+    // index 33 because we need to place somewhere after user-level process memory (132MB+)
+    page_directory[33].P = 1;   // mark as present
+    // must be user level access -> but might already be set
+    page_directory[33].U = 1;   // accessible by all
+    // R/W accessible
+    page_directory[33].R = 1;
+    page_directory[33].S = 0;  //switching this bit to 0 causes page fault???
+
+    
+    page_directory[33].offset31_12 = ((uint32_t) page_table >> ADDRESS_SHIFT_KB) & 0xFFF;
+    uint32_t testval = ((uint32_t) page_table >> ADDRESS_SHIFT_KB) & 0xFFF;
+
+    // page_table[(VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) + (pid+1)].P = 1;
+    // page_table[(VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) + (pid+1)].U = 1;
+    // page_table[VIDMEM_ADDRESS + (pid + 1)].offset31_12 = (uint32_t)((FOUR_MB - (FOUR_KB * (pid+1))) >> ADDRESS_SHIFT_KB);    // set bits 31-12 to address of page table (right shifted)
+    page_table[(VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) + (pid+1)].U = 0;
+    //page_table[(VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) + (pid+1)].offset31_12 = (uint32_t)((VIDMEM_ADDRESS + (FOUR_KB * (pid + 1))) >> ADDRESS_SHIFT_KB);
+    page_table[(VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) + (pid+1)].offset31_12 = VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB; 
+    uint32_t testval2 = (VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) + (pid+1);
+    uint32_t testval3 = (uint32_t)((VIDMEM_ADDRESS + (FOUR_KB * (pid + 1))) >> ADDRESS_SHIFT_KB);
+    //screen_start = (uint8_t**)((VIDMEM_ADDRESS + (FOUR_KB * pid)) >> ADDRESS_SHIFT_KB);
+
+    // flush the tlb
+    flush_tlb();
+}
+*/

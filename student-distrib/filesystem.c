@@ -1,6 +1,7 @@
 /* filesystem.c - sets up filesystem, includes some other functions regarding fs */
 
 #include "filesystem.h"
+#include "syscall.h"
 #include "lib.h"
 
 /* local static for boot block */
@@ -52,11 +53,15 @@ uint32_t read_dentry_by_name (const int8_t* fname, dentry_t* dentry){
     /* scan through dentries in boot block to find fname */
     for(i = 0; i < NUM_DIRENTRIES; i++){
         dentry_t* potential_dentry = &(the_boot_block->direntries[i]);
+
+        // need to check if potential dentry has length over 32
+        int32_t fname_len = (strlen(potential_dentry->filename) > FILENAME_LEN) ? FILENAME_LEN : strlen(potential_dentry->filename);
+
         //make sure filenames are same length
-        if (strlen(fname) != strlen(potential_dentry->filename))
+        if (strlen(fname) != fname_len)
             continue;
         //check length of filename for potential dentry and truncate to 32 bytes if necessary
-        int8_t fname_len = (strlen(potential_dentry->filename) > FILENAME_LEN) ? FILENAME_LEN : strlen(potential_dentry->filename);
+        // int8_t fname_len = (strlen(potential_dentry->filename) > FILENAME_LEN) ? FILENAME_LEN : strlen(potential_dentry->filename);
         if(!strncmp(fname, potential_dentry->filename, fname_len)){
             *dentry = *potential_dentry;
             return 0;
@@ -118,17 +123,50 @@ uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t leng
     //uint32_t* cur_datablock_index_addr = (uint32_t*)((inode_t*) i)->data_block_num[num_data_block]; // addr
     uint32_t* cur_datablock_index_addr = i + 1;     // add 1 (uint32_t, so 1 = 4B) to get us address at 0th data block number (in inode)
     // apply offset
-    cur_datablock_index_addr += (offset/BLOCK_SIZE) * 4;       // each data block index is 4B (diagram), division is floored in C
+    //cur_datablock_index_addr += (offset/BLOCK_SIZE) * 4;       // each data block index is 4B (diagram), division is floored in C -> NOT TIMES FOUR IMMA IDIOT
+    cur_datablock_index_addr += (offset/BLOCK_SIZE);       // each data block index is 4B (diagram), division is floored in C
     uint32_t cur_datablock_index = *cur_datablock_index_addr;
     num_data_block = (offset/BLOCK_SIZE);
     // get the actual data block's addr
     uint32_t* cur_datablock = start_datablocks + cur_datablock_index * BLOCK_SIZE/sizeof(uint32_t);
 
     /* setup for looping */
-    uint32_t position_in_file = offset % BLOCK_SIZE;
+    uint32_t position_in_file = (offset % BLOCK_SIZE)/4;
+    //uint32_t offset_in_address = offset % 4;    // each address contains 4 bytes, we need offset in address of starting point
 
     /* loop through data and read to buffer */
+    
     uint32_t bytes_read;
+    int offset_in_address;
+    for (bytes_read = 0; bytes_read < length; bytes_read++) {
+        offset_in_address = (offset + bytes_read) % 4;     // addresses contained 4 bytes each
+        if (offset_in_address == 0) {
+            buf[bytes_read] = ((*(cur_datablock + position_in_file))) & 0xFF;       // we want rightmost byte
+        } else if (offset_in_address == 1) {
+            buf[bytes_read] = ((*(cur_datablock + position_in_file)) >> 8) & 0xFF;  // we want third byte
+        } else if (offset_in_address == 2) {
+            buf[bytes_read] = ((*(cur_datablock + position_in_file)) >> 16) & 0xFF; // we want second byte
+        } else {
+            buf[bytes_read] = (*(cur_datablock + position_in_file)) >> 24;          // we want leftmost byte
+        }
+
+        if (bytes_read % 4 == 3) {
+            position_in_file++;
+        }
+        // if we reach end of current data block
+        // we increment position_in_file only once every 4 bytes
+        if (position_in_file >= BLOCK_SIZE/4) {
+            position_in_file = 0;   // reset position in file
+            num_data_block++;
+            cur_datablock_index = (uint32_t)((inode_t*) i)->data_block_num[num_data_block];
+            cur_datablock = start_datablocks + cur_datablock_index * BLOCK_SIZE/sizeof(uint32_t);
+        }
+        // if we reach EOF (each inode can hold up to 1023 data blocks, and its 0-indexed so 0-1022) 
+        if (num_data_block > NUM_DATA_BLOCKS - 1) {
+            return 0;
+        }
+    }
+    /*
     for (bytes_read = 0; bytes_read < length; bytes_read += 4) {
         // each value in buffer is only 1B, but we read 4B at a time (in little endian format):
         uint32_t test01 = (*(cur_datablock + position_in_file)) >> 24;              // we want leftmost byte
@@ -141,7 +179,7 @@ uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t leng
         buf[bytes_read + 3] = test01;
 
         position_in_file++;
-        /* if we reach end of current data block */
+        // if we reach end of current data block
         // we increment position_in_file only once every 4 bytes
         if (position_in_file >= BLOCK_SIZE/4) {
             position_in_file = 0;   // reset position in file
@@ -149,13 +187,52 @@ uint32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t leng
             cur_datablock_index = (uint32_t)((inode_t*) i)->data_block_num[num_data_block];
             cur_datablock = start_datablocks + cur_datablock_index * BLOCK_SIZE/sizeof(uint32_t);
         }
-        /* if we reach EOF (each inode can hold up to 1023 data blocks, and its 0-indexed so 0-1022) */
+        // if we reach EOF (each inode can hold up to 1023 data blocks, and its 0-indexed so 0-1022) 
+        if (num_data_block > NUM_DATA_BLOCKS - 1) {
+            return 0;
+        }
+    }
+    */
+    return bytes_read;       // divide by 4 because we want the number of bytes read, and there are 4 characters per byte
+}
+
+    // clear buffer
+    /*
+    int j;
+    for (j = 0; j < 1024; j++) {
+        buf[j] = '\0';
+    }
+    */
+/*
+    uint32_t bytes_read; // technically should be characters read
+    for (bytes_read = 0; bytes_read < length; bytes_read += 4) {
+        // each value in buffer is only 1B, but we read 4B at a time (in little endian format):
+        uint32_t test01 = (*(cur_datablock + position_in_file)) >> 24;              // we want leftmost byte
+        uint32_t test02 = ((*(cur_datablock + position_in_file)) >> 16) & 0xFF;     // we want second byte
+        uint32_t test03 = ((*(cur_datablock + position_in_file)) >> 8) & 0xFF;      // we want third byte
+        uint32_t test04 = ((*(cur_datablock + position_in_file))) & 0xFF;           // we want rightmost byte
+        buf[bytes_read] = test04;
+        buf[bytes_read + 1] = test03;
+        buf[bytes_read + 2] = test02;
+        buf[bytes_read + 3] = test01;
+
+        position_in_file++;
+        // if we reach end of current data block //
+        // we increment position_in_file only once every 4 bytes
+        if (position_in_file >= BLOCK_SIZE/4) {
+            position_in_file = 0;   // reset position in file
+            num_data_block++;
+            cur_datablock_index = (uint32_t)((inode_t*) i)->data_block_num[num_data_block];
+            cur_datablock = start_datablocks + cur_datablock_index * BLOCK_SIZE/sizeof(uint32_t);
+        }
+        // if we reach EOF (each inode can hold up to 1023 data blocks, and its 0-indexed so 0-1022) //
         if (num_data_block > NUM_DATA_BLOCKS - 1) {
             return 0;
         }
     }
     return bytes_read;
 }
+    */
 
 
 /* Local functions defined
@@ -200,8 +277,24 @@ int32_t file_close(int32_t fd){
  * 
  */ 
 int32_t file_read(int32_t fd, void* buf, int32_t nbytes){
-    /* use read_data */
-    return read_data(global_inode_index, 0, buf, nbytes);   // start at offset 0 because we want the whole file
+    /* Fetch inode idx and offset into file using fda array*/
+    pcb_t* curr_pcb = get_pcb_ptr();
+    uint32_t offset = (curr_pcb->fda[fd].file_position);
+
+    /* Check if file position of fd is at or beyond end of file */
+    uint32_t i = curr_pcb->fda[fd].inode;
+    uint32_t file_length = ((inode_t*)(fs_start_addr + (i + 1) * BLOCK_SIZE))->length;
+    /* Return 0 if file_position at or beyond length of file */
+    if (offset >= file_length && file_length != 0){
+        return 0;
+    }
+    
+    uint32_t bytes_read = read_data(i, offset, buf, nbytes);   // start at offset 0 because we want the whole file
+    /*Update file position */
+    curr_pcb->fda[fd].file_position += bytes_read;
+
+    /* call read_data with args */
+    return bytes_read;   // start at offset 0 because we want the whole file
 }
 
 /* file_write - doesn't do anything for this checkpoint
