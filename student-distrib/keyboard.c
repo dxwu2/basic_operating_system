@@ -99,9 +99,9 @@ void keyboard_handler(void){
     case TAB_RELEASE:
         break;
     case BACKSPACE:
-        if(buf_idx > 0){
+        if(buf_idx >= 0){
+            if(buf_idx > 0) backspace();    // if we can delete a char from screen, call backspace (lib.c) to erase
             delete_from_buf();
-            backspace();    // if we can delete a char from screen, call backspace (lib.c) to erase
         }
         break;
     // otherwise normal
