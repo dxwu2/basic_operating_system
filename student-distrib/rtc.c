@@ -67,7 +67,7 @@ int32_t rtc_close(int32_t fd) {
  *   DESCRIPTION: read from rtc 
  *   INPUTS: none
  *   OUTPUTS: none
- *   RETURN VALUE: 0
+ *   RETURN VALUE: always returns 0 (only after interrupt has occured)
  *   SIDE EFFECTS: waits until interrupt has occured
  */ 
 
@@ -88,7 +88,7 @@ int32_t rtc_read(int32_t fd, void* buf, int32_t nbytes) {
  *   SIDE EFFECTS: modifies rtc interrupt frequency
  */ 
 int32_t rtc_write(int32_t fd, const void* buf, int32_t nbytes) {
-    if (set_rtcFrequency(*(int*)(buf)) == -1)
+    if (buf == NULL || set_rtcFrequency(*(int*)(buf)) == -1)
         return -1;
     return 0;
 }
@@ -154,12 +154,12 @@ int set_rtcFrequency (int frequency) {
  */   
 void rtc_handler(){
     //disable interrupts
-    cli(); 
+    // cli(); 
     outb(SREG_C, IDX_PORT);	// select register C
     inb(DATA_PORT);		//throw away contents
     rtc_interrupt_occurred = 1;
     //test_interrupts();
     send_eoi(8); //send eoi to RTC, slave pin 1 so 8
-    sti(); //restore
+    // sti(); //restore
     return;
 }

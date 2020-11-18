@@ -31,6 +31,22 @@
 #define TAB 0x0F
 #define TAB_RELEASE 0x8F
 
+// figured out function keys by printing their scancode
+#define F1 59
+#define F1_RELEASE 187
+#define F2 60
+#define F2_RELEASE 188
+#define F3 61
+#define F3_RELEASE 189
+#define UP 72
+#define UP_RELEASE 200
+#define DOWN 80
+#define DOWN_RELEASE 208
+#define LEFT 75
+#define LEFT_RELEASE 203
+#define RIGHT 77
+#define RIGHT_RELEASE 205
+
 // flag indicating whether key was pressed - should be volatile
 volatile int key_flag;
 
@@ -67,6 +83,9 @@ void clear_keyboard_buf(void);
 
 // returns keyboard buffer
 void keyboard_return(void);
+
+// bash autocomplete implementation
+void autocomplete(void);
 
 // handler for keyboard - make it extern for asm linkage
 extern void keyboard_handler(void);

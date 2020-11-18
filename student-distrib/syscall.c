@@ -1,8 +1,5 @@
 
 #include "syscall.h"
-#include "filesystem.h"
-#include "terminal.h"
-#include "rtc.h"
 
 // initialize the file operations table 
 fops_t std_in_table = { bad_open, terminal_read, bad_write, bad_close};
@@ -50,6 +47,7 @@ void syscall_init() {
 int32_t sys_halt (uint8_t status){
     // cli();
     int32_t return_val;
+    int parent_esp, parent_ebp;
 
     // meaning an exception on user side was generated -> squash!
     if(exception_flag == 1){
@@ -85,16 +83,21 @@ int32_t sys_halt (uint8_t status){
         sys_execute((uint8_t*)"shell");
     }
 
-    // restore parent paging
-    // pcb_t* parent_pcb = curr_pcb->parent_pcb;
-    map_user_program(curr_pcb->parent_pid);
+    parent_ebp = curr_pcb->old_ebp;
+    parent_esp = curr_pcb->old_esp;
     
     // restore tss values and EBP/ESP values
-    tss.esp0 = curr_pcb->old_esp;
+    // tss.esp0 = curr_pcb->old_esp;
+    tss.esp0 = 0x800000 - (curr_pcb->parent_pid) * 0x2000;      // 8MB - (pid)*8kB
     tss.ss0 = KERNEL_DS;        // unsure if this is needed? halt worked fine without
+
+     // restore parent paging
+    // pcb_t* parent_pcb = curr_pcb->parent_pcb;
+    map_user_program(curr_pcb->parent_pid);
 
     // restore pcb
     curr_pid = curr_pcb->parent_pid;
+    curr_pcb = get_pcb_from_pid(curr_pid);
 
     // // indicate the process no longer running
     // running_flag = 0;
@@ -110,7 +113,7 @@ int32_t sys_halt (uint8_t status){
         // "ret;"
         
         : // no outputs
-        : "r"((int32_t)return_val), "r"(curr_pcb->old_ebp), "r"(curr_pcb->old_esp)       // we booling now
+        : "r"((int32_t)return_val), "r"(parent_ebp), "r"(parent_esp)       // we booling now
         // : "eax"
     );
 

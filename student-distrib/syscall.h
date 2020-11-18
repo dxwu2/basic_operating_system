@@ -3,6 +3,9 @@
 
 #include "lib.h"
 #include "paging.h"
+#include "filesystem.h"
+#include "terminal.h"
+#include "rtc.h"
 
 /* macros */
 #define MAX_NUM_PIDS    6   // up to 8 open files per task, but one is stdin and one is stdout
