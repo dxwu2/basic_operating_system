@@ -478,6 +478,8 @@ int32_t sys_getargs (uint8_t* buf, int32_t nbytes){
 
     pcb_t *curr_pcb = get_pcb_ptr();
 
+    if(curr_pcb->args[0] == '\0') return -1;
+
     // uint8_t* test = buf;
     // uint8_t* arguments = curr_pcb->args;
 
@@ -569,6 +571,7 @@ pcb_t* init_pcb(int pid, uint8_t* args){
     curr_pcb->base_kernel_stack = 0x800000 - (pid) * 0x2000;      // 8MB - (pid)*8kB
     curr_pcb->curr_pid = pid;
     curr_pcb->args = args;
+    // strcpy(curr_pcb->args, args);
 
     return curr_pcb;
 }
