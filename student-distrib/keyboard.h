@@ -52,7 +52,7 @@ volatile int key_flag;
 
 // for the keyboard buffer
 char keyboard_buf[KEYBOARD_BUF_SIZE];     // need keyboard buffer -> size 128 char but last character is null '\0'
-int buf_idx;                          // idx for current place in keyboard buffer -> initialize to 0
+int buf_idx;                              // idx for current place in keyboard buffer -> initialize to 0
 
 // key states
 int shift_pressed;

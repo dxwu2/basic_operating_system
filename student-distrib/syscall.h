@@ -100,6 +100,8 @@ typedef struct pcb {
     int parent_pid;
     int child_pid;
     
+    int term_id;
+
     int old_esp;                        // esp of the parent process
     int old_ebp;                        // ebp of the parent process
 

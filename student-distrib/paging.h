@@ -17,6 +17,10 @@
 #define FOUR_KB             0x1000
 #define FOUR_MB             0x400000
 
+#define TERM_1_VIDPAGE 0x000B9000
+#define TERM_2_VIDPAGE 0x000BA000
+#define TERM_3_VIDPAGE 0x000BB000
+
 /* struct for Page Directory Entries */
 typedef struct pde {
     /* using union and struct here gives us the option to use both between 4MB and 4kB pages */
@@ -54,13 +58,14 @@ typedef struct __attribute__((packed)) pte {
 } pte_t;
 
 /* global variables */
-pte_t page_table[NUM_ENTRIES] __attribute__ ((aligned (PAGING_ALIGNMENT)));
+pte_t page_table[NUM_ENTRIES] __attribute__ ((aligned (PAGING_ALIGNMENT)));     // 0 to 4
 pde_t page_directory[NUM_ENTRIES] __attribute__((aligned (PAGING_ALIGNMENT)));
-pte_t vidmap_page_table[NUM_ENTRIES] __attribute__ ((aligned (PAGING_ALIGNMENT)));
+pte_t vidmap_page_table[NUM_ENTRIES] __attribute__ ((aligned (PAGING_ALIGNMENT)));          // 128 to 132
 
 /* functions in paging.c */
 void init_paging(void);
 extern void flush_tlb(void);
 void map_user_program(int pid);
 void map_vidmem(void);
+void vidmap_term(int term_id);
 //void map_vidmem(uint8_t** screen_start, int pid);

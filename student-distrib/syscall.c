@@ -244,6 +244,7 @@ int32_t sys_execute (const uint8_t* command){
     // pcb_t* testing_pcb = get_pcb_ptr();
 
     // if not shell, we must set a parent
+    // potential fix: if (pid <= 2)
     if(pid != 0){
         curr_pcb->parent_pid = curr_pid;
         pcb_t* parent_pcb = get_pcb_from_pid(curr_pid); // retrieve parent program's pcb
@@ -545,10 +546,6 @@ pcb_t* init_pcb(int pid, uint8_t* args){
     pcb_t* curr_pcb = get_pcb_from_pid(pid);
     for(i = 0; i < FDA_SIZE; i++){
         curr_pcb->fda[i].fops_ptr = bad_table;       // FIXED: CAUSES PAGE FAULT EXCEPTION: because of how we initialized curr_pcb
-        // curr_pcb->fda[i].fops_ptr.open = NOT_IN_USE;
-        // curr_pcb->fda[i].fops_ptr.read = NOT_IN_USE;
-        // curr_pcb->fda[i].fops_ptr.write = NOT_IN_USE;
-        // curr_pcb->fda[i].fops_ptr.read = NOT_IN_USE;
         
         curr_pcb->fda[i].inode = -1;
         curr_pcb->fda[i].flags = NOT_IN_USE;
@@ -571,6 +568,8 @@ pcb_t* init_pcb(int pid, uint8_t* args){
     curr_pcb->base_kernel_stack = 0x800000 - (pid) * 0x2000;      // 8MB - (pid)*8kB
     curr_pcb->curr_pid = pid;
     curr_pcb->args = args;
+    
+    curr_pcb->term_id = curr_term;
     // strcpy(curr_pcb->args, args);
 
     return curr_pcb;

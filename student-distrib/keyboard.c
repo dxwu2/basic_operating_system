@@ -183,6 +183,25 @@ void process_key(uint8_t scancode){
         return;
     }
     if(alt_pressed){
+        // pending on F#, switch to terminal #
+        switch (scancode)
+        {
+        case F1:
+            switch_terminals(1);
+            // curr_term = 1;
+            break;
+        case F2:
+            switch_terminals(2);
+            // curr_term = 2;
+            break;
+        case F3:
+            switch_terminals(3);
+            // curr_term = 3;
+            break;
+        default:
+            break;
+        }
+
         return;     // do not do anything (yet)
     }
     if(caps_lock_pressed){

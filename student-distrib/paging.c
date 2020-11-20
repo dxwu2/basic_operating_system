@@ -121,7 +121,6 @@ void map_user_program(int pid) {
 }
 
 /* void map_vidmem() - maps a new 4kB chunk in virtual memory to the original 4kB video memory page in physical address */
-
 void map_vidmem() {
     // index 33 because we need to place somewhere after user-level process memory (132MB+)
     page_directory[33].P = 1;   // mark as present
@@ -135,11 +134,22 @@ void map_vidmem() {
     vidmap_page_table[0].P = 1;
     vidmap_page_table[0].U = 1;
     vidmap_page_table[0].R = 1;
-    vidmap_page_table[0].offset31_12 = VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB;
+    vidmap_page_table[0].offset31_12 = (VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB);
 
     flush_tlb();
 }
 
+// NEW
+/* void map_vidmem() - maps a new 4kB chunk in virtual memory to the original 4kB video memory page in physical address */
+void vidmap_term(int term_id) {
+
+    page_table[(VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB)+term_id].P = 1;
+    page_table[(VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB)+term_id].U = 1;
+    page_table[(VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB)+term_id].R = 1;
+    page_table[(VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB)+term_id].offset31_12 = (VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) + term_id;
+
+    flush_tlb();
+}
 
 /*
 void map_vidmem(uint8_t** screen_start, int pid){

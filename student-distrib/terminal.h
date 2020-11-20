@@ -4,6 +4,8 @@
 #ifndef _TERMINAL_H
 #define _TERMINAL_H
 
+#define MAX_TERMINALS 3
+
 #include "keyboard.h"
 #include "types.h"
 #include "lib.h"
@@ -21,6 +23,26 @@ int32_t terminal_read(int32_t fd, void* buf, int32_t nbytes);
 
 // terminal write function
 int32_t terminal_write(int32_t fd, const void* buf, int32_t nbytes);
+
+// boot terminals
+void boot_terminals(void);
+
+// switch terminals
+void switch_terminals(int next_term);
+
+int curr_term;
+
+typedef struct term{
+    int term_x;
+    int term_y;
+    int term_id;
+    char keyboard_buf[KEYBOARD_BUF_SIZE];
+    int term_pid[4];            // any given terminal can have at most 4 processes runnning (per discussion) - may not need it
+    int32_t* vidmem;
+
+} term_t;
+
+term_t terminals[MAX_TERMINALS];
 
 
 #endif /* _TERMINAL_H */
