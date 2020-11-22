@@ -14,6 +14,7 @@
 #include "filesystem.h"
 #include "types.h"
 #include "syscall.h"
+#include "schedule.h"
 //#define RUN_TESTS
 
 /* Macros. */
@@ -157,6 +158,11 @@ void entry(unsigned long magic, unsigned long addr) {
 
     syscall_init();
 
+    initial_boot();
+
+    init_PIT();
+
+    // boot_terminals();
     /* Enable interrupts */
     /* Do not enable the following until after you have set up your
      * IDT correctly otherwise QEMU will triple fault and simple close
@@ -172,7 +178,8 @@ void entry(unsigned long magic, unsigned long addr) {
 #endif
     /* Execute the first program ("shell") ... */
     // uint8_t* first_program = (uint8_t*)"shell";
-    sys_execute((uint8_t*)"shell");
+    // sys_execute((uint8_t*)"shell");
+    
 
     // boot_terminals()
 

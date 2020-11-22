@@ -76,41 +76,6 @@ int32_t terminal_write(int32_t fd, const void* buf, int32_t nbytes){
     return nbytes;
 }
 
-/* terminal_write(int32_t fd, const void* buf, int32_t nbytes)
- * Inputs: fd - not relevant to terminal
- *          buf - data to write
- *          nbytes - number of bytes
- * Return Value: int32_t (number of bytes written on success, -1 on failure?)
- * Function: Writes n bytes from buf to screen */
-void boot_terminals(void){
-    int i;
-    for (i = 0; i < 3; i++){
-        term_t term;
-        term.term_id = i+1;
-        term.term_x = 0;
-        term.term_y = 0;
-        
-        terminals[i] = term;
-    }
-
-
-    terminals[0].vidmem = (int32_t*) TERM_1_VIDPAGE;
-    terminals[1].vidmem = (int32_t*) TERM_2_VIDPAGE;
-    terminals[2].vidmem = (int32_t*) TERM_3_VIDPAGE;
-
-    // set default to 1
-    curr_term = 1;
-    for (i = 0; i < 3; i++){
-        sys_execute((uint8_t*)"shell");
-        curr_term++;
-    }
-
-    // reset back to terminal 1
-    curr_term = 1;
-
-    // shell->shell->shell
-
-}
 
 /* void switch_terminals(int next_term)
  * Inputs: int next_term
@@ -122,38 +87,27 @@ void switch_terminals(int next_term) {
     if (curr_term == next_term) return;
 
 
-    /*  actual vidmem : curr mem
-        v1
-        v2
-        v3
-
-    */
-
     // save vidmem into curr mem
     memcpy(terminals[curr_term].vidmem, VIDMEM_ADDRESS, FOUR_KB);
     
     // restore next state into vidmem
     memcpy(VIDMEM_ADDRESS, terminals[next_term].vidmem, FOUR_KB);
 
-    // switch execution to new terminal's current user program (changing the esp and ebp, similar to halt)
-    // switch to the right shell
-    // switch to whatever was previously running on that shell
+    //remap vidmem to visible region
+    map_vidmem();
 
-    /*
-
-    call fish in t1
-    switch to t2
-    ls - parent t2's shell
-
-    shell1->shell2->shell3
-    switch to t1
-    fish.parent = shell3
-
-    get_pcb(pid)
-
-
-    */
-
-    // update the curr_term global variable
+    /*Save curr keyboard buf and cursor position to terminal struct*/
+    memcpy(terminals[curr_term].keyboard_buf, keyboard_buf, KEYBOARD_BUF_SIZE);
+    // save current screen x/y into current term
+    terminals[curr_term].term_x = screen_x;
+    terminals[curr_term].term_y = screen_y;
+    
+    // restore next screen x/y and keyboard buf
+    screen_x = terminals[next_term].term_x;
+    screen_y = terminals[next_term].term_y;
+    // keyboard_buf = terminals[next_term].keyboard_buf;
+    memcpy(keyboard_buf, terminals[next_term].keyboard_buf, KEYBOARD_BUF_SIZE);
+    
+    // Update curr_term to reflect terminal switch
     curr_term = next_term;
 }

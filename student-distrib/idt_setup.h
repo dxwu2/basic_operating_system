@@ -30,6 +30,7 @@ void SIMD_FLOAT_ERR_EXCEP(void);
 // for assembly linkage for interrupts
 void KEYBOARD_INTERRUPT(void);
 void RTC_INTERRUPT(void);
+void PIT_INTERRUPT(void);
 
 //for assembly linkage for system calls
 void SYSTEM_CALL_WRAPPER(void);

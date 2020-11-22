@@ -41,8 +41,9 @@ void idt_setup() {
     SET_IDT_ENTRY(idt[0x11], ALIGN_CHECK_EXCEP);
     SET_IDT_ENTRY(idt[0x12], MACHINE_CHECK_EXCEP);
     SET_IDT_ENTRY(idt[0x13], SIMD_FLOAT_ERR_EXCEP);
-    
-    // keyboard entry
+
+    // interrupt entries
+    SET_IDT_ENTRY(idt[0x20], PIT_INTERRUPT);
     SET_IDT_ENTRY(idt[0x21], KEYBOARD_INTERRUPT);
     SET_IDT_ENTRY(idt[0x28], RTC_INTERRUPT);
     

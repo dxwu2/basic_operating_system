@@ -187,21 +187,17 @@ void process_key(uint8_t scancode){
         switch (scancode)
         {
         case F1:
-            switch_terminals(1);
-            // curr_term = 1;
+            switch_terminals(0);
             break;
         case F2:
-            switch_terminals(2);
-            // curr_term = 2;
+            switch_terminals(1);
             break;
         case F3:
-            switch_terminals(3);
-            // curr_term = 3;
+            switch_terminals(2);
             break;
         default:
             break;
         }
-
         return;     // do not do anything (yet)
     }
     if(caps_lock_pressed){

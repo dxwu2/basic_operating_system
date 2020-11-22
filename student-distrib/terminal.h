@@ -9,6 +9,7 @@
 #include "keyboard.h"
 #include "types.h"
 #include "lib.h"
+#include "schedule.h"
 
 // terminal driver functions below
 
@@ -31,12 +32,14 @@ void boot_terminals(void);
 void switch_terminals(int next_term);
 
 // current terminal we are viewing (0, 1, or 2) corresponds to T1, T2, T3
-int viewing_process;
+int curr_term;
 
 typedef struct term{
     int term_x;
     int term_y;
     int term_id;
+    int active_pid; //we might need this instead of term_pid array and just keep track of currently executing process on terminal
+
     char keyboard_buf[KEYBOARD_BUF_SIZE];
     int term_pid[4];            // any given terminal can have at most 4 processes runnning (per discussion) - may not need it
     int32_t* vidmem;

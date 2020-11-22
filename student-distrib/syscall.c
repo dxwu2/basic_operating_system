@@ -79,7 +79,8 @@ int32_t sys_halt (uint8_t status){
     }
 
     // if first shell, restart a new one
-    if(curr_pid == 0){
+    // original was curr_pid == 0
+    if(curr_pid <= 2){
         sys_execute((uint8_t*)"shell");
     }
 
@@ -94,6 +95,10 @@ int32_t sys_halt (uint8_t status){
      // restore parent paging
     // pcb_t* parent_pcb = curr_pcb->parent_pcb;
     map_user_program(curr_pcb->parent_pid);
+
+    /* Update terminal and pcb's active pid to other settings*/
+    terminals[curr_pcb->term_id].active_pid = curr_pcb->parent_pid;
+    scheduling_array[curr_pcb->term_id] = curr_pcb->parent_pid;
 
     // restore pcb
     curr_pid = curr_pcb->parent_pid;
@@ -245,7 +250,7 @@ int32_t sys_execute (const uint8_t* command){
 
     // if not shell, we must set a parent
     // potential fix: if (pid > 2) - all depends on boot method (2nd way, need a flag/indicator for first shell on that terminal)
-    if(pid != 0){
+    if(pid > 2){
         curr_pcb->parent_pid = curr_pid;
         pcb_t* parent_pcb = get_pcb_from_pid(curr_pid); // retrieve parent program's pcb
         parent_pcb->child_pid = pid;
@@ -256,6 +261,11 @@ int32_t sys_execute (const uint8_t* command){
     // update current pid
     curr_pid = pid;
 
+    /*Initalize term id and update active pid of curr_term*/
+    curr_pcb->term_id = curr_term;
+    terminals[curr_term].active_pid = pid;
+    scheduling_array[curr_term] = pid;
+    
     // save current EBP and ESP registers into PCB before we change
     asm volatile(
         // literally save ebp and esp into (free to clobber) registers

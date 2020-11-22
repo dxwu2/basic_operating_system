@@ -1,5 +1,5 @@
-#ifndef SCHEDULE_H
-#define SCHEDULE_H
+#ifndef _SCHEDULE_H
+#define _SCHEDULE_H
 
 #include "i8259.h"
 #include "lib.h"
@@ -21,34 +21,13 @@ int scheduled_process;
 // scheduling array - at most 3 processes running (per Aamir). These are the pids
 int scheduling_array[3];
 
-/*
-s0 -> s1 -> s2
-fish
-
-
-s[2] c -> shell3
-s[1] g
-s[0] f
-
--1
-4->0
-5
-
-
-shell shell shell ...
-
-2
-1
-0
-
-if(-1)
-
-regular scheduling
-
-- pid -> pcb 
-- how to get c in s[2] to have its parent point to shell3 (term_id?)
-
-*/
-
 // initialize the PIT
 void init_PIT(void);
+
+// PIT handler
+extern void PIT_handler();
+
+/*Change currently scheduled process to next in scheduling queue*/
+void schedule(void);
+
+#endif /* _SCHEDULE_H */
