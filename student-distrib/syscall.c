@@ -244,7 +244,7 @@ int32_t sys_execute (const uint8_t* command){
     // pcb_t* testing_pcb = get_pcb_ptr();
 
     // if not shell, we must set a parent
-    // potential fix: if (pid <= 2)
+    // potential fix: if (pid > 2) - all depends on boot method (2nd way, need a flag/indicator for first shell on that terminal)
     if(pid != 0){
         curr_pcb->parent_pid = curr_pid;
         pcb_t* parent_pcb = get_pcb_from_pid(curr_pid); // retrieve parent program's pcb

@@ -30,7 +30,8 @@ void boot_terminals(void);
 // switch terminals
 void switch_terminals(int next_term);
 
-int curr_term;
+// current terminal we are viewing (0, 1, or 2) corresponds to T1, T2, T3
+int viewing_process;
 
 typedef struct term{
     int term_x;
