@@ -88,10 +88,10 @@ void switch_terminals(int next_term) {
 
 
     // save vidmem into curr mem
-    memcpy(terminals[curr_term].vidmem, VIDMEM_ADDRESS, FOUR_KB);
+    memcpy(terminals[curr_term].vidmem, (uint32_t*)VIDMEM_ADDRESS, FOUR_KB);
     
     // restore next state into vidmem
-    memcpy(VIDMEM_ADDRESS, terminals[next_term].vidmem, FOUR_KB);
+    memcpy((uint32_t*)VIDMEM_ADDRESS, terminals[next_term].vidmem, FOUR_KB);
 
     //remap vidmem to visible region
     map_vidmem();

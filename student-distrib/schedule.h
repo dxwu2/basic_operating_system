@@ -2,8 +2,6 @@
 #define _SCHEDULE_H
 
 #include "i8259.h"
-#include "lib.h"
-#include "paging.h"
 #include "syscall.h"
 
 // all from OSDEV
@@ -21,6 +19,9 @@ int scheduled_process;
 // scheduling array - at most 3 processes running (per Aamir). These are the pids
 int scheduling_array[3];
 
+// BOOT
+void initial_boot(void);
+
 // initialize the PIT
 void init_PIT(void);
 
@@ -29,5 +30,6 @@ extern void PIT_handler();
 
 /*Change currently scheduled process to next in scheduling queue*/
 void schedule(void);
+
 
 #endif /* _SCHEDULE_H */

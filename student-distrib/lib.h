@@ -34,9 +34,13 @@ void vert_scroll(void);             // for vertical scrolling
 int32_t bad_userspace_addr(const void* addr, int32_t len);
 int32_t safe_strncpy(int8_t* dest, const int8_t* src, int32_t n);
 
-static int screen_x;
-static int screen_y;
-static char* video_mem;
+// static int screen_x;
+// static int screen_y;
+// static char* video_mem;
+
+int screen_x;
+int screen_y;
+// char* video_mem;
 
 /* Port read functions */
 /* Inb reads a byte and returns its value as a zero-extended 32-bit

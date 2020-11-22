@@ -40,7 +40,7 @@ typedef struct term{
     int term_id;
     int active_pid; //we might need this instead of term_pid array and just keep track of currently executing process on terminal
 
-    char keyboard_buf[KEYBOARD_BUF_SIZE];
+    char keyboard_buf[128];     // keyboard buf size
     int term_pid[4];            // any given terminal can have at most 4 processes runnning (per discussion) - may not need it
     int32_t* vidmem;
 

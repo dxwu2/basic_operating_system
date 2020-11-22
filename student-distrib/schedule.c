@@ -37,7 +37,7 @@ void PIT_handler(){
  * no input, no output
  * no side effects
  */
-void inital_boot() {
+void initial_boot() {
     int i;
     // inititalize 3 terminals
     for (i = 0; i < 3; i++){
