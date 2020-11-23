@@ -139,7 +139,7 @@ void map_vidmem() {
     flush_tlb();
 }
 
-/* void scheduling_vidmap(int terminal) -  
+/* void scheduling_vidmap(int terminal) - map each video page to its corresponding to backup buffer
  * Inputs   : int terminal - represents which backup buffer to map to
  * Outputs  : none
  * Side Effects : none

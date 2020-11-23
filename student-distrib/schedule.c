@@ -73,7 +73,7 @@ void initial_boot() {
     //Reset curr_term to first shell terminal
     curr_term = 0;
 
-    // set process to be 2 in preparation for the first terminal, and then start round robin
+    // set process to be 0 in preparation for the first terminal, and then start round robin
     scheduled_process = 0;
 
     for (i = 0; i < 3; i++){
@@ -89,13 +89,16 @@ void schedule(){
     if(booted_flag){
         booted_flag = 0;
         curr_term = 0;
+        background_scheduling_flag = 0;
     }
 
     // if very first terminal isn't executed, run shell
     if(scheduling_array[scheduled_process] == -1){
+        // if not first terminal, map to backup buffers instead of actual video memory (because at start, we are looking at term 1)
         if(scheduled_process > 0){
             // not first terminal, so 2nd or 3rd -> need to map
             scheduling_vidmap(scheduled_process);
+            background_scheduling_flag = 1;
         }
 
         if(scheduled_process == 2){

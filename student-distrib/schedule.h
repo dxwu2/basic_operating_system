@@ -22,6 +22,9 @@ int booted_flag;
 // scheduling array - at most 3 processes running (per Aamir). These are the pids
 int scheduling_array[3];
 
+// FLAG to prevent overwriting paging for user program vidmap (w/in execute)
+int background_scheduling_flag;
+
 // BOOT
 void initial_boot(void);
 
