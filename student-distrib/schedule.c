@@ -38,15 +38,15 @@ void PIT_handler(){
  * no side effects
  */
 void initial_boot() {
-    int i;
+    int i, j;
     // inititalize 3 terminals
     for (i = 0; i < 3; i++){
         term_t term;
-        term.term_id = i+1;
+        term.term_id = i;
         term.term_x = 0;
         term.term_y = 0;
-        for(i = 0; i < KEYBOARD_BUF_SIZE; i++){
-            term.keyboard_buf[i] = '\0';
+        for(j = 0; j < KEYBOARD_BUF_SIZE; j++){
+            term.keyboard_buf[j] = '\0';
         }
         /*Map each of terminals to corresponding vidmem page*/
         vidmap_term(i);
