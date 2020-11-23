@@ -58,29 +58,55 @@ void initial_boot() {
     terminals[1].vidmem = (int32_t*) TERM_2_VIDPAGE;
     terminals[2].vidmem = (int32_t*) TERM_3_VIDPAGE;
 
-    //initialize 3 shell processes
-    for (i = 0; i < 3; i++) {
-        curr_term = i;
-        sys_execute((uint8_t*)"shell");
+    // //initialize 3 shell processes
+    // for (i = 0; i < 3; i++) {
+    //     curr_term = i;
+    //     sys_execute((uint8_t*)"shell");
 
-        // need to map for shell2 and shell3
-        if(i >= 1) {
-            scheduling_vidmap(i);
-            // map_user_program(i);
-        }
-    }
+    //     // need to map for shell2 and shell3
+    //     if(i >= 1) {
+    //         scheduling_vidmap(i);
+    //         // map_user_program(i);
+    //     }
+    // }
 
     //Reset curr_term to first shell terminal
     curr_term = 0;
 
     // set process to be 2 in preparation for the first terminal, and then start round robin
-    scheduled_process = 2;
+    scheduled_process = 0;
+
+    for (i = 0; i < 3; i++){
+        scheduling_array[i] = -1;
+    }
 }
 
 /*Change currently scheduled process to next in scheduling queue*/
 void schedule(){
 
-    int next_scheduling_term;    
+    int next_scheduling_term;   
+
+    if(booted_flag){
+        booted_flag = 0;
+        curr_term = 0;
+    }
+
+    // if very first terminal isn't executed, run shell
+    if(scheduling_array[scheduled_process] == -1){
+        if(scheduled_process > 0){
+            // not first terminal, so 2nd or 3rd -> need to map
+            scheduling_vidmap(scheduled_process);
+        }
+
+        if(scheduled_process == 2){
+            booted_flag = 1;
+        }
+
+        curr_term = scheduled_process;
+        scheduled_process = ((1+scheduled_process) % 3);
+        sys_execute((uint8_t*)"shell");
+        return;
+    }
 
     // --------------------------------------------- normal scheduling --------------------------------------------- //
 
@@ -88,21 +114,35 @@ void schedule(){
     pcb_t* curr_pcb;
     pcb_t* next_pcb;
     curr_pcb = get_pcb_from_pid(scheduling_array[scheduled_process]);
-    next_scheduling_term = (++scheduled_process % 3);
+    next_scheduling_term = ((1+scheduled_process) % 3);
     next_pcb = get_pcb_from_pid(scheduling_array[next_scheduling_term]);
+
+    asm volatile(
+        // literally save ebp and esp into (free to clobber) registers
+        "movl %%ebp, %0;"
+        "movl %%esp, %1;"
+        
+        : "=r"(curr_pcb->old_ebp), "=r"(curr_pcb->old_esp)
+    );
 
     // when do we actually edit the pid# in scheduling_array
 
     // video remapping
     // if scheduled_process == curr_term, then don't need to do anything because it's already mapped to physical vid addr (0xB8000), we did this in checkpoint 4
     // if NOT equal, then need to change mapping to map to background buffers in physical memory
-    if(scheduled_process != curr_term){
-        // something
-        scheduling_vidmap(next_scheduling_term);        // represents the NEXT terminal (w/in [0,2])
-    }
+    // if(next_scheduling_term != curr_term){
+    scheduling_vidmap(next_scheduling_term);        // represents the NEXT terminal (w/in [0,2])
+    // }
 
     /*Remap user 128MB to new user program*/
     map_user_program(scheduling_array[next_scheduling_term]);
+
+    /* Restore next process' TSS */
+    tss.ss0 = KERNEL_DS;
+    // tss.esp0 = next_pcb->base_kernel_stack;
+    tss.esp0 = 0x800000 - (scheduling_array[next_scheduling_term]) * 0x2000;      // 8MB - (pid)*8kB
+
+    scheduled_process = next_scheduling_term;
 
     /* Switch ESP and EBP to next processes kernel stack */
     asm volatile(
@@ -113,12 +153,4 @@ void schedule(){
         : // no outputs
         : "r"(next_pcb->old_ebp), "r"(next_pcb->old_esp)    //we might need way to save esp/ebp after context switch in execute (instead of old parent's esp/ebp)
     );
-
-    /* Restore next process' TSS */
-    tss.ss0 = KERNEL_DS;
-    // tss.esp0 = next_pcb->base_kernel_stack;
-    tss.esp0 = 0x800000 - (scheduling_array[next_scheduling_term]) * 0x2000;      // 8MB - (pid)*8kB
-
-    // TODO: update the curr executing term and/or the pid in the scheduling array
-    scheduled_process = next_scheduling_term;
 }
