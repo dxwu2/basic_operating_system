@@ -158,6 +158,8 @@ void entry(unsigned long magic, unsigned long addr) {
 
     syscall_init();
 
+    clear();
+
     initial_boot();
 
     init_PIT();
@@ -169,7 +171,6 @@ void entry(unsigned long magic, unsigned long addr) {
      * without showing you any output */
     
     // printf("Enabling Interrupts\n");
-    clear();
     sti();
 
 #ifdef RUN_TESTS

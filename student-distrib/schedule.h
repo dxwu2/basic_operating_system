@@ -16,6 +16,9 @@
 // the terminal that is currently executing its process (in the round robin). This is an index into scheduling_array
 int scheduled_process;
 
+//Flag to determine if we've booted all three terminals and then must reset curr_term
+int booted_flag;
+
 // scheduling array - at most 3 processes running (per Aamir). These are the pids
 int scheduling_array[3];
 

@@ -153,11 +153,17 @@ void scheduling_vidmap(int terminal) {
     page_directory[33].R = 1;
     page_directory[33].S = 0; 
     page_directory[33].offset31_12 = (uint32_t)vidmap_page_table >> ADDRESS_SHIFT_KB;
-
+    // page_directory[33].offset31_12 = (uint32_t)page_table >> ADDRESS_SHIFT_KB;
     vidmap_page_table[0].P = 1;
     vidmap_page_table[0].U = 1;
     vidmap_page_table[0].R = 1;
+    // vidmap_page_table[0].offset31_12 = (terminal == curr_term) ? (VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) : (VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) + (terminal + 1);
     vidmap_page_table[0].offset31_12 = (VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) + (terminal + 1);
+
+    // page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].P = 1;
+    // page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].U = 1;
+    // page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].R = 1;
+    // page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].offset31_12 = (VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) + (terminal + 1);
 
     flush_tlb();
 }
