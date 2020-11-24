@@ -278,9 +278,13 @@ int32_t sys_execute (const uint8_t* command){
     // STEP 6: Context Switch - home stretch ?
     // fucking big brain moves at 2:57am
 
+    // save esp0
+    curr_pcb->old_esp0 = tss.esp0;
+
     // prepare for context switch: write new process' info to TSS
     tss.ss0 = KERNEL_DS;                        // if OSDEV tells you to jump off a cliff, would you do it? of course yes OSDEV legit
     tss.esp0 = curr_pcb->base_kernel_stack;     // already calculated, fucking genius
+
 
     // need to do a tss_flush, then enter ring 3 ? -> no tss flush, since only one tss for all processes (for this mp)
 

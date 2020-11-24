@@ -86,10 +86,13 @@ void schedule(){
 
     int next_scheduling_term;   
 
+    // only if we are done booting
     if(booted_flag){
         booted_flag = 0;
         curr_term = 0;
     }
+
+    // ---------------------------------------------        BOOT        --------------------------------------------- //
 
     // if very first terminal isn't executed, run shell
     if(scheduling_array[scheduled_process] == -1){
@@ -97,6 +100,20 @@ void schedule(){
         if(scheduled_process > 0){
             // not first terminal, so 2nd or 3rd -> need to map
             scheduling_vidmap(scheduled_process);
+
+            // int ebp = 0x800000 - (scheduled_process) * 0x2000;
+            // int esp = ebp;
+
+            // /* Switch ESP and EBP to next processes kernel stack */
+            // asm volatile(
+            //     // literally save ebp and esp into (free to clobber) registers
+            //     "movl %0, %%ebp;"
+            //     "movl %1, %%esp;"
+                
+            //     : // no outputs
+            //     : "r"(ebp), "r"(esp)    //we might need way to save esp/ebp after context switch in execute (instead of old parent's esp/ebp)
+            // );
+
         }
 
         if(scheduled_process == 2){
@@ -118,32 +135,32 @@ void schedule(){
     next_scheduling_term = ((1+scheduled_process) % 3);
     next_pcb = get_pcb_from_pid(scheduling_array[next_scheduling_term]);
 
-    asm volatile(
-        // literally save ebp and esp into (free to clobber) registers
-        "movl %%ebp, %0;"
-        "movl %%esp, %1;"
+    // asm volatile(
+    //     // literally save ebp and esp into (free to clobber) registers
+    //     "movl %%ebp, %0;"
+    //     "movl %%esp, %1;"
         
-        : "=r"(curr_pcb->old_ebp), "=r"(curr_pcb->old_esp)
-    );
+    //     : "=r"(curr_pcb->old_ebp), "=r"(curr_pcb->old_esp)
+    // );
 
     // when do we actually edit the pid# in scheduling_array
 
     // video remapping
     // if scheduled_process == curr_term, then don't need to do anything because it's already mapped to physical vid addr (0xB8000), we did this in checkpoint 4
     // if NOT equal, then need to change mapping to map to background buffers in physical memory
-    // if(next_scheduling_term != curr_term){
-    scheduling_vidmap(next_scheduling_term);        // represents the NEXT terminal (w/in [0,2])
-    // }
+
+    if(next_scheduling_term != curr_term){
+        scheduling_vidmap(next_scheduling_term);        // represents the NEXT terminal (w/in [0,2])
+    }
 
     /*Remap user 128MB to new user program*/
     map_user_program(scheduling_array[next_scheduling_term]);
 
     /* Restore next process' TSS */
     tss.ss0 = KERNEL_DS;
-    // tss.esp0 = next_pcb->base_kernel_stack;
-    tss.esp0 = 0x800000 - (scheduling_array[next_scheduling_term]) * 0x2000;      // 8MB - (pid)*8kB
+    tss.esp0 = next_pcb->old_esp0;
+    // tss.esp0 = 0x800000 - (scheduling_array[next_scheduling_term]) * 0x2000;      // 8MB - (pid)*8kB
 
-    scheduled_process = next_scheduling_term;
 
     /* Switch ESP and EBP to next processes kernel stack */
     asm volatile(
@@ -154,4 +171,8 @@ void schedule(){
         : // no outputs
         : "r"(next_pcb->old_ebp), "r"(next_pcb->old_esp)    //we might need way to save esp/ebp after context switch in execute (instead of old parent's esp/ebp)
     );
+
+    // finally switch it
+    scheduled_process = next_scheduling_term;
+
 }
