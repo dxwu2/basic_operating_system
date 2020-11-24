@@ -231,7 +231,7 @@ int32_t sys_execute (const uint8_t* command){
     }
 
     // map user program
-    if(!background_scheduling_flag) map_user_program(pid);
+    map_user_program(pid);
 
     // STEP 4: user level program loader
     uint8_t* usr_buf = (uint8_t*)0x8048000;                 // memory 

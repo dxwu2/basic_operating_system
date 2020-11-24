@@ -89,7 +89,6 @@ void schedule(){
     if(booted_flag){
         booted_flag = 0;
         curr_term = 0;
-        background_scheduling_flag = 0;
     }
 
     // if very first terminal isn't executed, run shell
@@ -98,7 +97,6 @@ void schedule(){
         if(scheduled_process > 0){
             // not first terminal, so 2nd or 3rd -> need to map
             scheduling_vidmap(scheduled_process);
-            background_scheduling_flag = 1;
         }
 
         if(scheduled_process == 2){
