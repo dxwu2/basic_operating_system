@@ -94,7 +94,7 @@ void switch_terminals(int next_term) {
     memcpy((uint32_t*)VIDMEM_ADDRESS, (uint32_t*)terminals[next_term].vidmem, FOUR_KB);
 
     //remap vidmem to visible region
-    map_vidmem();
+    // map_vidmem();
 
     /*Save curr keyboard buf and cursor position to terminal struct*/
     memcpy(terminals[curr_term].keyboard_buf, keyboard_buf, KEYBOARD_BUF_SIZE);

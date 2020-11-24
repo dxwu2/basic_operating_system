@@ -90,6 +90,7 @@ int32_t sys_halt (uint8_t status){
     // restore tss values and EBP/ESP values
     // tss.esp0 = curr_pcb->old_esp;
     tss.esp0 = 0x800000 - (curr_pcb->parent_pid) * 0x2000;      // 8MB - (pid)*8kB
+    // tss.esp0 = curr_pcb->old_esp0;
     tss.ss0 = KERNEL_DS;        // unsure if this is needed? halt worked fine without
 
      // restore parent paging
@@ -136,6 +137,9 @@ int32_t sys_halt (uint8_t status){
  * Side Effects: Does a lot of stuff
  */
 int32_t sys_execute (const uint8_t* command){
+
+    // begin critical section
+    cli();
 
     // STEP 1: parse the command
     int i;
@@ -262,9 +266,13 @@ int32_t sys_execute (const uint8_t* command){
     curr_pid = pid;
 
     /*Initalize term id and update active pid of curr_term*/
-    curr_pcb->term_id = curr_term;
-    terminals[curr_term].active_pid = pid;
-    scheduling_array[curr_term] = pid;
+    // curr_pcb->term_id = curr_term;
+    // terminals[curr_term].active_pid = pid;
+    // scheduling_array[curr_term] = pid;
+    
+    curr_pcb->term_id = scheduled_process;
+    terminals[scheduled_process].active_pid = pid;
+    scheduling_array[scheduled_process] = pid;
     
     // save current EBP and ESP registers into PCB before we change
     asm volatile(
@@ -310,9 +318,14 @@ int32_t sys_execute (const uint8_t* command){
 
         //"pushl $0x8400000;"         // push ESP (132MB)
         "pushfl;"                   // push flags (EFLAGS)
+        "popl %%edx;"                // save flags into edx
+        "orl $0x200, %%edx;"        // or with x200 to enable flags
+        "pushl %%edx;"              // finally push register
+
         "pushl $0x0023;"            // push user code segment (CS)
         "movl %0, %%eax;"
         "pushl %%eax;"              // push the entry position (EIP) -> must be somewhere around 128 MB
+
         "iret;"                     // iret has to happen
         
         "RETURN_FROM_HALT:;"         // this is where we jump from halt (per discussion)
@@ -320,7 +333,7 @@ int32_t sys_execute (const uint8_t* command){
         
         : "=r" (return_val)
         : "r" (entry_position)
-        : "eax", "ecx"
+        : "eax", "ecx", "edx"
     );
 
 

@@ -188,12 +188,15 @@ void process_key(uint8_t scancode){
         {
         case F1:
             switch_terminals(0);
+            // printf("Terminal 1\n");
             break;
         case F2:
             switch_terminals(1);
+            // printf("Terminal 2\n");
             break;
         case F3:
             switch_terminals(2);
+            // printf("Terminal 3\n");
             break;
         default:
             break;
