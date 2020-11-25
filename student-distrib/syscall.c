@@ -136,6 +136,7 @@ int32_t sys_halt (uint8_t status){
  * Side Effects: Does a lot of stuff
  */
 int32_t sys_execute (const uint8_t* command){
+    cli();
 
     // STEP 1: parse the command
     int i;
@@ -310,6 +311,39 @@ int32_t sys_execute (const uint8_t* command){
 
         //"pushl $0x8400000;"         // push ESP (132MB)
         "pushfl;"                   // push flags (EFLAGS)
+        "popl %%edx;"                // save flags into edx
+        "orl $0x200, %%edx;"        // or with x200 to enable flags
+        "pushl %%edx;"              // finally push register
+
+        "pushl $0x0023;"            // push user code segment (CS)
+        "movl %0, %%eax;"
+        "pushl %%eax;"              // push the entry position (EIP) -> must be somewhere around 128 MB
+
+        "iret;"                     // iret has to happen
+        
+        "RETURN_FROM_HALT:;"         // this is where we jump from halt (per discussion)
+        "movl %%eax, %1;"
+        
+        : "=r" (return_val)
+        : "r" (entry_position)
+        : "eax", "ecx", "edx"
+    );
+   /*
+    asm volatile(
+        //"cli;"
+        // look at x86_desc.h macros for the values below. also just follow osdev [order]
+        "pushl $0x002B;"            // push user data segement (SS)
+        //"pushl %%esp;"              // push ESP -> wrong because we are pushing the kernel stack address. ESP here is 0x7ffd04 -> definitely wrong
+                                    // not what we want because we are switching to user stack
+                                    // We want the user's stack pointer (virt. mem.) 
+                                    // should the user's stack pointer less than 132 MB (132 MB - 4 B) -> so that it doesn't go outside the page
+        //"mov $0x002B, %%ax;"  -> don't need this?? (according to Harsh)
+        //"mov %%ax, %%ds;"
+        "movl $0x83FFFFC, %%eax;"          // 132 MB - 4 B => 0x8400000 - 0x4 => 0x83FFFFC
+        "pushl %%eax;"
+
+        //"pushl $0x8400000;"         // push ESP (132MB)
+        "pushfl;"                   // push flags (EFLAGS)
         "pushl $0x0023;"            // push user code segment (CS)
         "movl %0, %%eax;"
         "pushl %%eax;"              // push the entry position (EIP) -> must be somewhere around 128 MB
@@ -322,6 +356,7 @@ int32_t sys_execute (const uint8_t* command){
         : "r" (entry_position)
         : "eax", "ecx"
     );
+    */
 
 
     /* this is THE approach */

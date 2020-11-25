@@ -68,5 +68,5 @@ extern void flush_tlb(void);
 void map_user_program(int pid);
 void map_vidmem(void);
 void vidmap_term(int term_id);
-void scheduling_vidmap(int terminal);
+void scheduling_vidmap(int terminal, int curr_term);
 //void map_vidmem(uint8_t** screen_start, int pid);

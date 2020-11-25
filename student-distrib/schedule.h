@@ -15,6 +15,7 @@
 
 // the terminal that is currently executing its process (in the round robin). This is an index into scheduling_array
 int scheduled_process;
+int old_scheduled_process;
 
 //Flag to determine if we've booted all three terminals and then must reset curr_term
 int booted_flag;

@@ -139,33 +139,26 @@ void map_vidmem() {
     flush_tlb();
 }
 
-/* void scheduling_vidmap(int terminal) - map each video page to its corresponding to backup buffer
+/* void scheduling_vidmap(int terminal) - maps VM's video memory (0xB8000) to one of the background buffers in physical memory
  * Inputs   : int terminal - represents which backup buffer to map to
  * Outputs  : none
  * Side Effects : none
  */ 
-void scheduling_vidmap(int terminal) {
-    // index 33 because we need to place somewhere after user-level process memory (132MB+)
-    // page_directory[33].P = 1;   // mark as present
-    // // must be user level access -> but might already be set
-    // page_directory[33].U = 1;   // accessible by all
-    // // R/W accessible
-    // page_directory[33].R = 1;
-    // page_directory[33].S = 0; 
-    // page_directory[33].offset31_12 = (uint32_t)vidmap_page_table >> ADDRESS_SHIFT_KB;
-    // page_directory[33].offset31_12 = (uint32_t)page_table >> ADDRESS_SHIFT_KB;
-    
-    
-    // vidmap_page_table[0].P = 1;
-    // vidmap_page_table[0].U = 1;
-    // vidmap_page_table[0].R = 1;
-    // // vidmap_page_table[0].offset31_12 = (terminal == curr_term) ? (VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) : (VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) + (terminal + 1);
-    // vidmap_page_table[0].offset31_12 = (VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) + (terminal + 1);
+void scheduling_vidmap(int terminal, int curr_term) {
+    if (terminal != curr_term) {
+        page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].P = 1;
+        page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].U = 1;
+        page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].R = 1;
+        page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].offset31_12 = (VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) + (terminal + 1);
+    } else {
+        page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].P = 1;
+        page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].U = 1;
+        page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].R = 1;
+        page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].offset31_12 = (VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB);
+    }
 
-    page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].P = 1;
-    page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].U = 1;
-    page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].R = 1;
-    page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].offset31_12 = (VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) + (terminal + 1);
+    // screen_x = terminal[curr_term].term_x;
+    // screen_y = terminal[curr_term].term_y;
 
     flush_tlb();
 }

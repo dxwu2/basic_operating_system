@@ -98,8 +98,14 @@ void schedule(){
     if(scheduling_array[scheduled_process] == -1){
         // if not first terminal, map to backup buffers instead of actual video memory (because at start, we are looking at term 1)
         if(scheduled_process > 0){
+            // save current screen x/y into current term
+            terminals[scheduled_process].term_x = screen_x;
+            terminals[scheduled_process].term_y = screen_y;
+
             // not first terminal, so 2nd or 3rd -> need to map
-            scheduling_vidmap(scheduled_process);
+            scheduling_vidmap(scheduled_process, curr_term);
+
+            
 
             // int ebp = 0x800000 - (scheduled_process) * 0x2000;
             // int esp = ebp;
@@ -122,6 +128,11 @@ void schedule(){
 
         curr_term = scheduled_process;
         scheduled_process = ((1+scheduled_process) % 3);
+
+        // restore next screen x/y and keyboard buf
+        screen_x = terminals[scheduled_process].term_x;
+        screen_y = terminals[scheduled_process].term_y;
+
         sys_execute((uint8_t*)"shell");
         return;
     }
@@ -150,7 +161,7 @@ void schedule(){
     // if NOT equal, then need to change mapping to map to background buffers in physical memory
 
     if(next_scheduling_term != curr_term){
-        scheduling_vidmap(next_scheduling_term);        // represents the NEXT terminal (w/in [0,2])
+        scheduling_vidmap(next_scheduling_term, curr_term);        // represents the NEXT terminal (w/in [0,2])
     }
 
     /*Remap user 128MB to new user program*/
@@ -158,8 +169,8 @@ void schedule(){
 
     /* Restore next process' TSS */
     tss.ss0 = KERNEL_DS;
-    tss.esp0 = next_pcb->old_esp0;
-    // tss.esp0 = 0x800000 - (scheduling_array[next_scheduling_term]) * 0x2000;      // 8MB - (pid)*8kB
+    //tss.esp0 = next_pcb->old_esp0;
+    tss.esp0 = 0x800000 - (scheduling_array[next_scheduling_term]) * 0x2000;      // 8MB - (pid)*8kB
 
 
     /* Switch ESP and EBP to next processes kernel stack */
