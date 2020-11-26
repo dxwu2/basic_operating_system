@@ -10,8 +10,8 @@ fops_t filedir_table = {dir_open, dir_read, dir_write, dir_close};
 fops_t bad_table = {bad_open, bad_read, bad_write, bad_close};
 
 /* local variables */
-static int pid_array[MAX_NUM_PIDS];
-static int curr_pid;        // needed when setting parent pid
+// static int pid_array[MAX_NUM_PIDS];
+// static int curr_pid;        // needed when setting parent pid
 
 
 /* void handle_system_call()

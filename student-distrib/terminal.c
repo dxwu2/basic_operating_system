@@ -111,3 +111,14 @@ void switch_terminals(int next_term) {
     // Update curr_term to reflect terminal switch
     curr_term = next_term;
 }
+
+// save coordinates and switch them, takes no inputs
+void switch_coords(int scheduled_term, int next_term){
+    // save old
+    terminals[scheduled_term].term_x = screen_x;
+    terminals[scheduled_term].term_y = screen_y;
+
+    // restore new
+    screen_x = terminals[next_term].term_x;
+    screen_y = terminals[next_term].term_y;
+}

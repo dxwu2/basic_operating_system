@@ -34,7 +34,7 @@ const char* exception_msgs[20] = {
  * Side Effects: Prints message containing vector and corresponding int message
  */
 void handle_exception(unsigned vec){
-    // switch_terminals(0);        // hopefully works?
+    switch_terminals(0);        // hopefully works?
     clear();
     printf("Interrupt vector 0x%x -- %s\n", vec, exception_msgs[vec]);
 

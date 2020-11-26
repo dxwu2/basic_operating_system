@@ -127,4 +127,7 @@ volatile int exception_flag;
 // flag to indicate if process is currently running (EXCEPT first shell)
 volatile int running_flag;
 
+int pid_array[MAX_NUM_PIDS];
+int curr_pid;        // needed when setting parent pid
+
 #endif
