@@ -266,6 +266,8 @@ int32_t sys_execute (const uint8_t* command){
     curr_pcb->term_id = curr_term;
     terminals[curr_term].active_pid = pid;
     scheduling_array[curr_term] = pid;
+
+    // scheduled_process = ((1+scheduled_process) % 3);
     
     // save current EBP and ESP registers into PCB before we change
     asm volatile(

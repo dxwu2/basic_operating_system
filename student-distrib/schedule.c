@@ -83,6 +83,16 @@ void initial_boot() {
 
 /*Change currently scheduled process to next in scheduling queue*/
 void schedule(){
+    /*
+    pcb_t* curr_pcb = get_pcb_from_pid(terminals[scheduled_process].)
+    asm volatile(
+        "movl %%ebp, %0"
+        "movl %%esp, %1"
+
+        : "=r"(curr_pcb->)
+        : // no inputs
+    );
+    */
 
     int next_scheduling_term;   
 
@@ -105,21 +115,24 @@ void schedule(){
             // not first terminal, so 2nd or 3rd -> need to map
             scheduling_vidmap(scheduled_process, curr_term);
 
-            
+            pcb_t* pcb = get_pcb_from_pid(0);
 
-            // int ebp = 0x800000 - (scheduled_process) * 0x2000;
-            // int esp = ebp;
+            // int ebp = pcb->old_ebp - (scheduled_process) * 0x2000;
 
-            // /* Switch ESP and EBP to next processes kernel stack */
-            // asm volatile(
-            //     // literally save ebp and esp into (free to clobber) registers
-            //     "movl %0, %%ebp;"
-            //     "movl %1, %%esp;"
+            /*
+            int ebp = 0x800000 - (scheduled_process) * 0x2000;
+            int esp = ebp;
+
+            // Switch ESP and EBP to next processes kernel stack
+            asm volatile(
+                // literally save ebp and esp into (free to clobber) registers
+                "movl %0, %%ebp;"
+                "movl %1, %%esp;"
                 
-            //     : // no outputs
-            //     : "r"(ebp), "r"(esp)    //we might need way to save esp/ebp after context switch in execute (instead of old parent's esp/ebp)
-            // );
-
+                : // no outputs
+                : "r"(ebp), "r"(esp)    //we might need way to save esp/ebp after context switch in execute (instead of old parent's esp/ebp)
+            );
+            */
         }
 
         if(scheduled_process == 2){
