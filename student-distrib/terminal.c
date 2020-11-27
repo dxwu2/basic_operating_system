@@ -86,30 +86,27 @@ int32_t terminal_write(int32_t fd, const void* buf, int32_t nbytes){
 void switch_terminals(int next_term) {
     if (curr_term == next_term) return;
 
-
-    // save vidmem into curr mem
-    memcpy((uint32_t*)terminals[curr_term].vidmem, (uint32_t*)VIDMEM_ADDRESS, FOUR_KB);
-    
-    // restore next state into vidmem
-    memcpy((uint32_t*)VIDMEM_ADDRESS, (uint32_t*)terminals[next_term].vidmem, FOUR_KB);
-
-    //remap vidmem to visible region
-    // map_vidmem();
-
-    /*Save curr keyboard buf and cursor position to terminal struct*/
-    memcpy(terminals[curr_term].keyboard_buf, keyboard_buf, KEYBOARD_BUF_SIZE);
-    // save current screen x/y into current term
-    terminals[curr_term].term_x = screen_x;
+    // save vidmem and other things (cursor, keyboard buffer)
+    memcpy(terminals[curr_term].keyboard_buf, keyboard_buf, KEYBOARD_BUF_SIZE);     // save keyboard buffer
+    terminals[curr_term].term_x = screen_x;                                         // save screen x/y
     terminals[curr_term].term_y = screen_y;
-    
-    // restore next screen x/y and keyboard buf
-    screen_x = terminals[next_term].term_x;
+    memcpy((uint32_t*)terminals[curr_term].vidmem, (uint32_t*)VIDMEM_ADDRESS, FOUR_KB);     // save video mem into backup buffer
+
+    // restore next terminal's progress
+    screen_x = terminals[next_term].term_x;         // restore screen x/y
     screen_y = terminals[next_term].term_y;
-    // keyboard_buf = terminals[next_term].keyboard_buf;
-    memcpy(keyboard_buf, terminals[next_term].keyboard_buf, KEYBOARD_BUF_SIZE);
+    memcpy((uint32_t*)VIDMEM_ADDRESS, (uint32_t*)terminals[next_term].vidmem, FOUR_KB);     // restore next state into vidmem
+    memcpy(keyboard_buf, terminals[next_term].keyboard_buf, KEYBOARD_BUF_SIZE);             // restore keyboard buf, and reprint
     
-    // Update curr_term to reflect terminal switch
+    int i;
+    for(i = 0; i < KEYBOARD_BUF_SIZE; i++){
+        putc(keyboard_buf[i]);
+    }
+
+    // finally switch terms
     curr_term = next_term;
+    
+    // printf("Terminal: %d\n", curr_term);
 }
 
 // save coordinates and switch them, takes no inputs

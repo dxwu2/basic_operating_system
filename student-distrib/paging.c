@@ -154,7 +154,6 @@ void scheduling_vidmap(int terminal, int curr_term) {
         page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].P = 1;
         page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].U = 1;
         page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].R = 1;
-        // page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].offset31_12 = (video_pages[terminal] >> ADDRESS_SHIFT_KB);
         page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].offset31_12 = (VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) + (terminal + 1);
     }
     else{

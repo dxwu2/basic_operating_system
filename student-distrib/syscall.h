@@ -107,6 +107,9 @@ typedef struct pcb {
     int old_ebp;                        // ebp of the parent process
     int old_esp0;                       // SAVE OLD ESP0
 
+    int schedule_esp;                   // save
+    int schedule_ebp;
+
     uint8_t* args;                      // for getargs syscall 
 
 } pcb_t;

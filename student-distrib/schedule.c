@@ -56,9 +56,9 @@ void initial_boot() {
         terminals[i] = term;
     }
 
-    terminals[0].vidmem = (int32_t*) TERM_1_VIDPAGE;
-    terminals[1].vidmem = (int32_t*) TERM_2_VIDPAGE;
-    terminals[2].vidmem = (int32_t*) TERM_3_VIDPAGE;
+    terminals[0].vidmem = (char*) TERM_1_VIDPAGE;
+    terminals[1].vidmem = (char*) TERM_2_VIDPAGE;
+    terminals[2].vidmem = (char*) TERM_3_VIDPAGE;
 
     //Reset curr_term to first shell terminal
     curr_term = 0;
@@ -84,6 +84,7 @@ void schedule(){
     // need to BOOT first terminal
     if(scheduling_array[0] == -1){
         // if not first terminal, map to backup buffers instead of actual video memory (because at start, we are looking at term 1)
+
         scheduling_vidmap(scheduled_process, curr_term);
         // send_eoi(PIT_IRQ);
         sys_execute((uint8_t*)"shell");
@@ -103,8 +104,11 @@ void schedule(){
     pcb_t* curr_pcb;
     pcb_t* next_pcb;
     curr_pcb = get_pcb_from_pid(scheduling_array[scheduled_process]);
-    curr_pcb->old_ebp = curr_ebp;
-    curr_pcb->old_esp = curr_esp;
+    // curr_pcb->old_ebp = curr_ebp;
+    // curr_pcb->old_esp = curr_esp;
+    
+    curr_pcb->schedule_ebp = curr_ebp;
+    curr_pcb->schedule_esp = curr_esp;
 
     next_scheduling_term = ((1+scheduled_process) % 3);     // mod 3 because 3 terminals at most
 
@@ -164,7 +168,14 @@ void schedule(){
 
     // finally switch it
     scheduled_process = next_scheduling_term;
+
     next_pcb = get_pcb_from_pid(scheduling_array[next_scheduling_term]);
+    curr_pid = next_pcb->curr_pid;
+
+    /* Restore next process' TSS */
+    tss.ss0 = KERNEL_DS;
+    // tss.esp0 = next_pcb->old_esp0;
+    tss.esp0 = 0x800000 - (scheduling_array[next_scheduling_term]) * 0x2000;      // 8MB - (pid)*8kB
 
     /*Remap user 128MB to new user program*/ 
     map_user_program(scheduling_array[next_scheduling_term]);
@@ -175,11 +186,6 @@ void schedule(){
     // switch coords
     switch_coords(scheduled_process, next_scheduling_term);
 
-    /* Restore next process' TSS */
-    tss.ss0 = KERNEL_DS;
-    // tss.esp0 = next_pcb->old_esp0;
-    tss.esp0 = 0x800000 - (scheduling_array[next_scheduling_term]) * 0x2000;      // 8MB - (pid)*8kB
-
     /* Switch ESP and EBP to next processes kernel stack */
     asm volatile(
         // literally save ebp and esp into (free to clobber) registers
@@ -187,7 +193,7 @@ void schedule(){
         "movl %1, %%esp;"
         
         : // no outputs
-        : "r"(next_pcb->old_ebp), "r"(next_pcb->old_esp)    //we might need way to save esp/ebp after context switch in execute (instead of old parent's esp/ebp)
+        : "r"(next_pcb->schedule_ebp), "r"(next_pcb->schedule_esp)    //we might need way to save esp/ebp after context switch in execute (instead of old parent's esp/ebp)
     );
     
     // send_eoi(PIT_IRQ);

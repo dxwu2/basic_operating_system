@@ -34,6 +34,7 @@ void switch_terminals(int next_term);
 // saves/restores screen_x and screen_y
 void switch_coords(int scheduled_term, int next_term);
 
+
 // current terminal we are viewing (0, 1, or 2) corresponds to T1, T2, T3
 int curr_term;
 

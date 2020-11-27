@@ -22,8 +22,6 @@ int booted_flag;
 // scheduling array - at most 3 processes running (per Aamir). These are the pids
 int scheduling_array[3];
 
-int old_scheduled_process;
-
 // BOOT
 void initial_boot(void);
 

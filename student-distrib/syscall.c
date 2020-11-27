@@ -45,7 +45,8 @@ void syscall_init() {
  * 
  */
 int32_t sys_halt (uint8_t status){
-    // cli();
+    cli();
+
     int32_t return_val;
     int parent_esp, parent_ebp;
 
@@ -113,14 +114,12 @@ int32_t sys_halt (uint8_t status){
         "movl %0, %%eax;"
         "movl %1, %%ebp;"
         "movl %2, %%esp;"
-        // "sti;"
+        "sti;"
         "jmp RETURN_FROM_HALT;"
-        // "leave;"
-        // "ret;"
         
         : // no outputs
         : "r"((int32_t)return_val), "r"(parent_ebp), "r"(parent_esp)       // we booling now
-        // : "eax"
+        : "eax", "ebp", "esp"           // this matters - ebp/esp were not getting right values in layout asm
     );
 
     // remember to go back to end of execute and set the return value accordingly (always returns 0 right now)
@@ -252,27 +251,9 @@ int32_t sys_execute (const uint8_t* command){
     pcb_t* curr_pcb = init_pcb(pid, args);
     // pcb_t* testing_pcb = get_pcb_ptr();
 
-    // if not shell, we must set a parent
-    // potential fix: if (pid > 2) - all depends on boot method (2nd way, need a flag/indicator for first shell on that terminal)
-    if(pid > 2){
-        curr_pcb->parent_pid = curr_pid;
-        pcb_t* parent_pcb = get_pcb_from_pid(curr_pid); // retrieve parent program's pcb
-        parent_pcb->child_pid = pid;
-        // pcb_t* parent_pcb = get_pcb_ptr();          // getting existing pcb
-        // curr_pcb->parent_pid = parent_pcb->curr_pid;          // set this to be parent of (soon-to-be) new pcb
-        // parent_pcb->child_pid = curr_pcb->curr_pid;           // set parent's child to be curr_pcb
-    }
-    // update current pid
-    curr_pid = pid;
-
     /*Initalize term id and update active pid of curr_term*/
-    // curr_pcb->term_id = curr_term;
-    // terminals[curr_term].active_pid = pid;
-    // scheduling_array[curr_term] = pid;
-    
-    curr_pcb->term_id = scheduled_process;
-    terminals[scheduled_process].active_pid = pid;
-    scheduling_array[scheduled_process] = pid;
+    int curr_esp;
+    int curr_ebp;
     
     // save current EBP and ESP registers into PCB before we change
     asm volatile(
@@ -280,19 +261,53 @@ int32_t sys_execute (const uint8_t* command){
         "mov %%esp, %0;"
         "mov %%ebp, %1;"
         
-        : "=r" (curr_pcb->old_esp), "=r" (curr_pcb->old_ebp)        // bro is this how we read registers im losing my minddddddd
+        : "=r" (curr_esp), "=r" (curr_ebp)        // bro is this how we read registers im losing my minddddddd
     );
+
+    // case for booting up
+    if(pid <= 2){
+        curr_pcb->term_id = scheduled_process;
+        terminals[scheduled_process].active_pid = pid;
+        scheduling_array[scheduled_process] = pid;
+
+        // shells will never halt -> only important is schedule esp/ebp
+        curr_pcb->old_esp0 = tss.esp0;          // dont think this matters
+        curr_pcb->schedule_esp = curr_esp;
+        curr_pcb->schedule_ebp = curr_ebp;
+
+        curr_pcb->old_ebp = curr_ebp;
+        curr_pcb->old_esp = curr_esp;
+
+    }
+    // case for normal scheduling
+    else{
+        curr_pcb->parent_pid = scheduling_array[curr_term];
+        pcb_t* parent_pcb = get_pcb_from_pid(scheduling_array[curr_term]); // retrieve parent program's pcb
+        parent_pcb->child_pid = pid;
+
+        curr_pcb->term_id = curr_term;
+        terminals[curr_term].active_pid = pid;
+        scheduling_array[curr_term] = pid;
+
+        // scheduling and execute ebp/esp are DIFFERENT
+        curr_pcb->old_esp0 = tss.esp0;      // again this may not matter
+        curr_pcb->schedule_esp = curr_pcb->base_kernel_stack;
+        curr_pcb->schedule_ebp = curr_pcb->schedule_esp;
+
+        curr_pcb->old_ebp = curr_ebp;
+        curr_pcb->old_esp = curr_esp;
+
+    }
+
+    // update current pid
+    curr_pid = pid;
 
     // STEP 6: Context Switch - home stretch ?
     // fucking big brain moves at 2:57am
 
-    // save esp0
-    curr_pcb->old_esp0 = tss.esp0;
-
     // prepare for context switch: write new process' info to TSS
     tss.ss0 = KERNEL_DS;                        // if OSDEV tells you to jump off a cliff, would you do it? of course yes OSDEV legit
     tss.esp0 = curr_pcb->base_kernel_stack;     // already calculated, fucking genius
-
 
     // need to do a tss_flush, then enter ring 3 ? -> no tss flush, since only one tss for all processes (for this mp)
 
@@ -333,7 +348,7 @@ int32_t sys_execute (const uint8_t* command){
         
         : "=r" (return_val)
         : "r" (entry_position)
-        : "eax", "ecx", "edx"
+        : "eax", "edx"
     );
 
 
