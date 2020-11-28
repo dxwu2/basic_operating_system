@@ -119,7 +119,7 @@ int32_t sys_halt (uint8_t status){
         
         : // no outputs
         : "r"((int32_t)return_val), "r"(parent_ebp), "r"(parent_esp)       // we booling now
-        : "eax"           // this matters - ebp/esp were not getting right values in layout asm
+        : "eax"
     );
 
     // remember to go back to end of execute and set the return value accordingly (always returns 0 right now)

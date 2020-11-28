@@ -56,9 +56,9 @@ void initial_boot() {
         terminals[i] = term;
     }
 
-    terminals[0].vidmem = (char*) TERM_1_VIDPAGE;
-    terminals[1].vidmem = (char*) TERM_2_VIDPAGE;
-    terminals[2].vidmem = (char*) TERM_3_VIDPAGE;
+    terminals[0].vidmem = (int32_t) TERM_1_VIDPAGE;
+    terminals[1].vidmem = (int32_t) TERM_2_VIDPAGE;
+    terminals[2].vidmem = (int32_t) TERM_3_VIDPAGE;
 
     //Reset curr_term to first shell terminal
     curr_term = 0;
