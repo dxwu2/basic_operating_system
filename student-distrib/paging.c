@@ -4,7 +4,7 @@
 // #include "lib.h"
 // #include "terminal.h"
 
-int video_pages[3] = {TERM_1_VIDPAGE, TERM_2_VIDPAGE, TERM_3_VIDPAGE};
+int32_t video_pages[3] = {TERM_1_VIDPAGE, TERM_2_VIDPAGE, TERM_3_VIDPAGE};
 
 /* void init_paging(void) - initializes the page table and page directory
  * Inputs   : none
@@ -151,25 +151,31 @@ void map_vidmem() {
 void scheduling_vidmap(int terminal, int curr_term) {
 
     if(terminal != curr_term){
-        page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].P = 1;
-        page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].U = 1;
-        page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].R = 1;
-        page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].offset31_12 = (VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) + (terminal + 1);
+        page_table[video_pages[terminal] >> ADDRESS_SHIFT_KB].P = 1;
+        page_table[video_pages[terminal] >> ADDRESS_SHIFT_KB].U = 1;
+        page_table[video_pages[terminal] >> ADDRESS_SHIFT_KB].R = 1;
+        page_table[video_pages[terminal] >> ADDRESS_SHIFT_KB].offset31_12 = (video_pages[terminal] >> ADDRESS_SHIFT_KB);
+        // page_table[video_pages[terminal] >> ADDRESS_SHIFT_KB].offset31_12 = (VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) + (terminal + 1);
     }
     else{
-        page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].P = 1;
-        page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].U = 1;
-        page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].R = 1;
-        page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].offset31_12 = (VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB);
+        page_table[video_pages[terminal] >> ADDRESS_SHIFT_KB].P = 1;
+        page_table[video_pages[terminal] >> ADDRESS_SHIFT_KB].U = 1;
+        page_table[video_pages[terminal] >> ADDRESS_SHIFT_KB].R = 1;
+        page_table[video_pages[terminal] >> ADDRESS_SHIFT_KB].offset31_12 = (VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB);
     }
 
-    // screen_x = terminals[curr_term].term_x;
-    // screen_y = terminals[curr_term].term_y;
-
-    // page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].P = 1;
-    // page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].U = 1;
-    // page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].R = 1;
-    // page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].offset31_12 = (VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) + (terminal + 1);
+    // if(terminal != curr_term){
+    //     page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].P = 1;
+    //     page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].U = 1;
+    //     page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].R = 1;
+    //     page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].offset31_12 = (VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) + (terminal + 1);
+    // }
+    // else{
+    //     page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].P = 1;
+    //     page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].U = 1;
+    //     page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].R = 1;
+    //     page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].offset31_12 = (VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB);
+    // }
 
     flush_tlb();
 }
