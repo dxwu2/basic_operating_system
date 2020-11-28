@@ -35,7 +35,9 @@ int32_t terminal_read(int32_t fd, void* buf, int32_t nbytes){
     }
 
     // wait until '\n' is pressed
+    // cli();
     while(!key_flag);
+    // sti();
 
     // bytes should be the minimum between keyboard buffer length and nbytes to read
     bytes = (strlen(keyboard_buf) < nbytes) ? strlen(keyboard_buf) : nbytes;
@@ -97,6 +99,8 @@ void switch_terminals(int next_term) {
     screen_y = terminals[next_term].term_y;
     memcpy((uint32_t*)VIDMEM_ADDRESS, (uint32_t*)terminals[next_term].vidmem, FOUR_KB);     // restore next state into vidmem
     memcpy(keyboard_buf, terminals[next_term].keyboard_buf, KEYBOARD_BUF_SIZE);             // restore keyboard buf, and reprint
+
+    update_cursor(screen_x, screen_y);
     
     int i;
     for(i = 0; i < KEYBOARD_BUF_SIZE; i++){
