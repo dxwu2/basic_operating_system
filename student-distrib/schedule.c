@@ -19,8 +19,10 @@ void init_PIT(){
 /*Function called upon interrupt fired by PIT*/
 void PIT_handler(){
     send_eoi(PIT_IRQ);
+
     /*If more than one active terminal running, switch process*/
     schedule();
+
 
     /*
     need a way to keep track of list of pids
@@ -54,21 +56,9 @@ void initial_boot() {
         terminals[i] = term;
     }
 
-    terminals[0].vidmem = (int32_t*) TERM_1_VIDPAGE;
-    terminals[1].vidmem = (int32_t*) TERM_2_VIDPAGE;
-    terminals[2].vidmem = (int32_t*) TERM_3_VIDPAGE;
-
-    // //initialize 3 shell processes
-    // for (i = 0; i < 3; i++) {
-    //     curr_term = i;
-    //     sys_execute((uint8_t*)"shell");
-
-    //     // need to map for shell2 and shell3
-    //     if(i >= 1) {
-    //         scheduling_vidmap(i);
-    //         // map_user_program(i);
-    //     }
-    // }
+    terminals[0].vidmem = (char*) TERM_1_VIDPAGE;
+    terminals[1].vidmem = (char*) TERM_2_VIDPAGE;
+    terminals[2].vidmem = (char*) TERM_3_VIDPAGE;
 
     //Reset curr_term to first shell terminal
     curr_term = 0;
@@ -94,57 +84,87 @@ void schedule(){
     );
     */
 
-    int next_scheduling_term;   
-
-    // only if we are done booting
-    if(booted_flag){
-        booted_flag = 0;
-        curr_term = 0;
-    }
+    int next_scheduling_term;
+    int curr_esp;
+    int curr_ebp;
 
     // ---------------------------------------------        BOOT        --------------------------------------------- //
+    // BAND-AID SOLUTION DONT FIX WHATS NOT BROKEN
 
-    // if very first terminal isn't executed, run shell
-    if(scheduling_array[scheduled_process] == -1){
+    // need to BOOT first terminal
+    if(scheduling_array[0] == -1){
         // if not first terminal, map to backup buffers instead of actual video memory (because at start, we are looking at term 1)
-        if(scheduled_process > 0){
-            // save current screen x/y into current term
-            terminals[scheduled_process].term_x = screen_x;
-            terminals[scheduled_process].term_y = screen_y;
 
-            // not first terminal, so 2nd or 3rd -> need to map
-            scheduling_vidmap(scheduled_process, curr_term);
+        scheduling_vidmap(scheduled_process, curr_term);
+        // send_eoi(PIT_IRQ);
+        sys_execute((uint8_t*)"shell");
+        return;
+    }
 
-            pcb_t* pcb = get_pcb_from_pid(0);
+    // save current ebp/esp (for the current pcb)
+    asm volatile(
 
-            // int ebp = pcb->old_ebp - (scheduled_process) * 0x2000;
+        "movl %%ebp, %0;"
+        "movl %%esp, %1;"
 
-            /*
-            int ebp = 0x800000 - (scheduled_process) * 0x2000;
-            int esp = ebp;
+        : "=r"(curr_ebp), "=r"(curr_esp)
+    );
 
-            // Switch ESP and EBP to next processes kernel stack
-            asm volatile(
-                // literally save ebp and esp into (free to clobber) registers
-                "movl %0, %%ebp;"
-                "movl %1, %%esp;"
-                
-                : // no outputs
-                : "r"(ebp), "r"(esp)    //we might need way to save esp/ebp after context switch in execute (instead of old parent's esp/ebp)
-            );
-            */
-        }
+    // get pcb bc first shell has pid 0
+    pcb_t* curr_pcb;
+    pcb_t* next_pcb;
+    curr_pcb = get_pcb_from_pid(scheduling_array[scheduled_process]);
+    // curr_pcb->old_ebp = curr_ebp;
+    // curr_pcb->old_esp = curr_esp;
+    
+    curr_pcb->schedule_ebp = curr_ebp;
+    curr_pcb->schedule_esp = curr_esp;
 
-        if(scheduled_process == 2){
-            booted_flag = 1;
-        }
+    next_scheduling_term = ((1+scheduled_process) % 3);     // mod 3 because 3 terminals at most
 
-        curr_term = scheduled_process;
-        scheduled_process = ((1+scheduled_process) % 3);
+    // need to BOOT the SECOND terminal
+    if(scheduling_array[1] == -1){
+        scheduled_process = 1;
+        switch_coords(0, 1);
 
-        // restore next screen x/y and keyboard buf
-        screen_x = terminals[scheduled_process].term_x;
-        screen_y = terminals[scheduled_process].term_y;
+        int ebp = 0x800000 - (scheduled_process) * 0x2000;
+        int esp = ebp;
+
+        scheduling_vidmap(scheduled_process, curr_term);
+
+        asm volatile(
+            // literally save ebp and esp into (free to clobber) registers
+            "movl %0, %%ebp;"
+            "movl %1, %%esp;"
+            
+            : // no outputs
+            : "r"(ebp), "r"(esp)    //we might need way to save esp/ebp after context switch in execute (instead of old parent's esp/ebp)
+        );
+
+        sys_execute((uint8_t*)"shell");
+        return;
+    }
+
+    // BOOT THIRD TERMINAL AHHHHHH
+    if(scheduling_array[2] == -1){
+        scheduled_process = 2;
+        booted_flag = 1;
+        switch_coords(1,2);
+
+        int ebp = 0x800000 - (scheduled_process) * 0x2000;
+        int esp = ebp;
+
+        scheduling_vidmap(scheduled_process, curr_term);
+
+        asm volatile(
+            // literally save ebp and esp into (free to clobber) registers
+            "movl %0, %%ebp;"
+            "movl %1, %%esp;"
+            
+            : // no outputs
+            : "r"(ebp), "r"(esp)    //we might need way to save esp/ebp after context switch in execute (instead of old parent's esp/ebp)
+            // : "r"(pcb->old_ebp), "r"(pcb->old_esp)    //we might need way to save esp/ebp after context switch in execute (instead of old parent's esp/ebp)
+        );
 
         sys_execute((uint8_t*)"shell");
         return;
@@ -152,39 +172,29 @@ void schedule(){
 
     // --------------------------------------------- normal scheduling --------------------------------------------- //
 
-    // get current pcb and next pcb
-    pcb_t* curr_pcb;
-    pcb_t* next_pcb;
-    curr_pcb = get_pcb_from_pid(scheduling_array[scheduled_process]);
-    next_scheduling_term = ((1+scheduled_process) % 3);
-    next_pcb = get_pcb_from_pid(scheduling_array[next_scheduling_term]);
-
-    // asm volatile(
-    //     // literally save ebp and esp into (free to clobber) registers
-    //     "movl %%ebp, %0;"
-    //     "movl %%esp, %1;"
-        
-    //     : "=r"(curr_pcb->old_ebp), "=r"(curr_pcb->old_esp)
-    // );
-
-    // when do we actually edit the pid# in scheduling_array
-
     // video remapping
     // if scheduled_process == curr_term, then don't need to do anything because it's already mapped to physical vid addr (0xB8000), we did this in checkpoint 4
     // if NOT equal, then need to change mapping to map to background buffers in physical memory
 
-    if(next_scheduling_term != curr_term){
-        scheduling_vidmap(next_scheduling_term, curr_term);        // represents the NEXT terminal (w/in [0,2])
-    }
+    // finally switch it
+    scheduled_process = next_scheduling_term;
 
-    /*Remap user 128MB to new user program*/
-    map_user_program(scheduling_array[next_scheduling_term]);
+    next_pcb = get_pcb_from_pid(scheduling_array[next_scheduling_term]);
+    curr_pid = next_pcb->curr_pid;
 
     /* Restore next process' TSS */
     tss.ss0 = KERNEL_DS;
-    //tss.esp0 = next_pcb->old_esp0;
+    // tss.esp0 = next_pcb->old_esp0;
     tss.esp0 = 0x800000 - (scheduling_array[next_scheduling_term]) * 0x2000;      // 8MB - (pid)*8kB
 
+    /*Remap user 128MB to new user program*/ 
+    map_user_program(scheduling_array[next_scheduling_term]);
+
+    // video remapping 
+    scheduling_vidmap(next_scheduling_term, curr_term);
+
+    // switch coords
+    switch_coords(scheduled_process, next_scheduling_term);
 
     /* Switch ESP and EBP to next processes kernel stack */
     asm volatile(
@@ -193,10 +203,8 @@ void schedule(){
         "movl %1, %%esp;"
         
         : // no outputs
-        : "r"(next_pcb->old_ebp), "r"(next_pcb->old_esp)    //we might need way to save esp/ebp after context switch in execute (instead of old parent's esp/ebp)
+        : "r"(next_pcb->schedule_ebp), "r"(next_pcb->schedule_esp)    //we might need way to save esp/ebp after context switch in execute (instead of old parent's esp/ebp)
     );
-
-    // finally switch it
-    scheduled_process = next_scheduling_term;
-
+    
+    // send_eoi(PIT_IRQ);
 }

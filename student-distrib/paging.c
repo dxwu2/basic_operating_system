@@ -1,6 +1,10 @@
 /* paging.S - set up page directory, page table, and pages */
 
 #include "paging.h"
+// #include "lib.h"
+// #include "terminal.h"
+
+int video_pages[3] = {TERM_1_VIDPAGE, TERM_2_VIDPAGE, TERM_3_VIDPAGE};
 
 /* void init_paging(void) - initializes the page table and page directory
  * Inputs   : none
@@ -145,24 +149,30 @@ void map_vidmem() {
  * Side Effects : none
  */ 
 void scheduling_vidmap(int terminal, int curr_term) {
-    if (terminal != curr_term) {
+
+    if(terminal != curr_term){
         page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].P = 1;
         page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].U = 1;
         page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].R = 1;
         page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].offset31_12 = (VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) + (terminal + 1);
-    } else {
+    }
+    else{
         page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].P = 1;
         page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].U = 1;
         page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].R = 1;
         page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].offset31_12 = (VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB);
     }
 
-    // screen_x = terminal[curr_term].term_x;
-    // screen_y = terminal[curr_term].term_y;
+    // screen_x = terminals[curr_term].term_x;
+    // screen_y = terminals[curr_term].term_y;
+
+    // page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].P = 1;
+    // page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].U = 1;
+    // page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].R = 1;
+    // page_table[VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB].offset31_12 = (VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) + (terminal + 1);
 
     flush_tlb();
 }
-
 
 // **NEW**
 /* void map_vidmem() - maps a new 4kB chunk in virtual memory to the original 4kB video memory page in physical address */

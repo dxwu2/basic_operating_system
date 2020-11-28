@@ -62,6 +62,9 @@ void handle_exception(unsigned vec){
         sys_halt(255);          // random number, won't matter since exception flag
     }
 
+    // exception_flag = 1;     // make sys_halt aware that this was an exception
+    // sys_halt(255);          // random number, won't matter since exception flag
+
     while(1);
 }
 

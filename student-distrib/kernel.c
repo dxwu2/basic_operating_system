@@ -26,7 +26,7 @@
 void entry(unsigned long magic, unsigned long addr) {
 
     multiboot_info_t *mbi;
-
+    
     /* Clear the screen. */
     clear();
 

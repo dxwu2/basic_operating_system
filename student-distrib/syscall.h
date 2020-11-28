@@ -107,6 +107,9 @@ typedef struct pcb {
     int old_ebp;                        // ebp of the parent process
     int old_esp0;                       // SAVE OLD ESP0
 
+    int schedule_esp;                   // save
+    int schedule_ebp;
+
     uint8_t* args;                      // for getargs syscall 
 
 } pcb_t;
@@ -126,5 +129,8 @@ volatile int exception_flag;
 
 // flag to indicate if process is currently running (EXCEPT first shell)
 volatile int running_flag;
+
+int pid_array[MAX_NUM_PIDS];
+int curr_pid;        // needed when setting parent pid
 
 #endif
