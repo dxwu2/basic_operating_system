@@ -32,7 +32,7 @@ void boot_terminals(void);
 void switch_terminals(int next_term);
 
 // saves/restores screen_x and screen_y
-void switch_coords(int scheduled_term, int next_term);
+// void switch_coords(int scheduled_term, int next_term);
 
 
 // current terminal we are viewing (0, 1, or 2) corresponds to T1, T2, T3
@@ -45,8 +45,11 @@ typedef struct term{
     int active_pid; //we might need this instead of term_pid array and just keep track of currently executing process on terminal
 
     char keyboard_buf[128];     // keyboard buf size
+    int buf_idx;                // index for keyboard buf
+    
     int term_pid[4];            // any given terminal can have at most 4 processes runnning (per discussion) - may not need it
     int32_t vidmem;
+    int key_flag;
 
 } term_t;
 

@@ -54,6 +54,9 @@ void initial_boot() {
         vidmap_term(i);
         
         terminals[i] = term;
+
+        terminals[i].term_x = 0;
+        terminals[i].term_y = 0;
     }
 
     terminals[0].vidmem = (int32_t) TERM_1_VIDPAGE;
@@ -73,16 +76,6 @@ void initial_boot() {
 
 /*Change currently scheduled process to next in scheduling queue*/
 void schedule(){
-    /*
-    pcb_t* curr_pcb = get_pcb_from_pid(terminals[scheduled_process].)
-    asm volatile(
-        "movl %%ebp, %0"
-        "movl %%esp, %1"
-
-        : "=r"(curr_pcb->)
-        : // no inputs
-    );
-    */
 
     int next_scheduling_term;
     int curr_esp;
@@ -125,12 +118,13 @@ void schedule(){
     // need to BOOT the SECOND terminal
     if(scheduling_array[1] == -1){
         scheduled_process = 1;
-        switch_coords(0, 1);
+        // switch_coords(0, 1);
 
         int ebp = 0x800000 - (scheduled_process) * 0x2000;
         int esp = ebp;
 
         scheduling_vidmap(scheduled_process, curr_term);
+        // switch_coords(0, 1);
 
         asm volatile(
             // literally save ebp and esp into (free to clobber) registers
@@ -149,12 +143,13 @@ void schedule(){
     if(scheduling_array[2] == -1){
         scheduled_process = 2;
         booted_flag = 1;
-        switch_coords(1,2);
+        // switch_coords(1,2);
 
         int ebp = 0x800000 - (scheduled_process) * 0x2000;
         int esp = ebp;
 
         scheduling_vidmap(scheduled_process, curr_term);
+        // switch_coords(1,2);
 
         asm volatile(
             // literally save ebp and esp into (free to clobber) registers
@@ -176,8 +171,8 @@ void schedule(){
     // if scheduled_process == curr_term, then don't need to do anything because it's already mapped to physical vid addr (0xB8000), we did this in checkpoint 4
     // if NOT equal, then need to change mapping to map to background buffers in physical memory
 
-    int prev_process = scheduled_process;
     // finally switch it
+    int prev_process = scheduled_process;
     scheduled_process = next_scheduling_term;
 
     next_pcb = get_pcb_from_pid(scheduling_array[next_scheduling_term]);
@@ -195,7 +190,7 @@ void schedule(){
     scheduling_vidmap(next_scheduling_term, curr_term);
 
     // switch coords
-    switch_coords(prev_process, next_scheduling_term);
+    // switch_coords(prev_process, next_scheduling_term);
 
     /* Switch ESP and EBP to next processes kernel stack */
     asm volatile(
