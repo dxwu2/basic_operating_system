@@ -183,8 +183,15 @@ void putc(uint8_t c, int term_id) {
         terminals[term_id].term_x = 0;
     } 
     else {
-        *(uint8_t *)(video_mem + ((NUM_COLS * terminals[term_id].term_y + terminals[term_id].term_x) << 1)) = c;
-        *(uint8_t *)(video_mem + ((NUM_COLS * terminals[term_id].term_y + terminals[term_id].term_x) << 1) + 1) = ATTRIB;
+        if (term_id == curr_term) {
+            *(uint8_t *)(video_mem + ((NUM_COLS * terminals[term_id].term_y + terminals[term_id].term_x) << 1)) = c;
+            *(uint8_t *)(video_mem + ((NUM_COLS * terminals[term_id].term_y + terminals[term_id].term_x) << 1) + 1) = ATTRIB;
+        } else {
+            *(uint8_t *)(video_mem + (term_id+1) * 0x1000 + ((NUM_COLS * terminals[term_id].term_y + terminals[term_id].term_x) << 1)) = c;
+            *(uint8_t *)(video_mem + (term_id+1) * 0x1000 + ((NUM_COLS * terminals[term_id].term_y + terminals[term_id].term_x) << 1) + 1) = ATTRIB;
+        }
+        // *(uint8_t *)(video_mem + ((NUM_COLS * terminals[term_id].term_y + terminals[term_id].term_x) << 1)) = c;
+        // *(uint8_t *)(video_mem + ((NUM_COLS * terminals[term_id].term_y + terminals[term_id].term_x) << 1) + 1) = ATTRIB;
 
         // if screen x is more than num of cols
         terminals[term_id].term_x++;
