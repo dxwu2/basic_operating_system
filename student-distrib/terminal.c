@@ -71,7 +71,14 @@ int32_t terminal_write(int32_t fd, const void* buf, int32_t nbytes){
     for(i = 0; i < nbytes; i++){
         char letter = ((char*)buf)[i];      // converting void pointer to char pointer -> need to index by array (ea char = 1 byte)
         if(letter != '\0'){                 // do not print null bytes to screen
-            putc(letter);
+            // putc(letter, 0);
+
+            if(curr_term == scheduled_process){
+                putc(letter, 1);
+            }
+            else{
+                putc(letter, 0);
+            }
         }
     }
 
@@ -92,23 +99,23 @@ void switch_terminals(int next_term) {
     memcpy(terminals[curr_term].keyboard_buf, keyboard_buf, KEYBOARD_BUF_SIZE);     // save keyboard buffer
     terminals[curr_term].term_x = screen_x;                                         // save screen x/y
     terminals[curr_term].term_y = screen_y;
-    memcpy((uint32_t*)terminals[curr_term].vidmem, (uint32_t*)VIDMEM_ADDRESS, FOUR_KB);     // save video mem into backup buffer
+    memcpy((uint32_t*)terminals[curr_term].vidmem, (uint32_t*)VIDMEM_ADDRESS, 80*25*2);     // save video mem into backup buffer, rows*cols
 
     // restore next terminal's progress
     screen_x = terminals[next_term].term_x;         // restore screen x/y
     screen_y = terminals[next_term].term_y;
-    memcpy((uint32_t*)VIDMEM_ADDRESS, (uint32_t*)terminals[next_term].vidmem, FOUR_KB);     // restore next state into vidmem
-    memcpy(keyboard_buf, terminals[next_term].keyboard_buf, KEYBOARD_BUF_SIZE);             // restore keyboard buf, and reprint
-
-    update_cursor(screen_x, screen_y);
+    memcpy((uint32_t*)VIDMEM_ADDRESS, (uint32_t*)terminals[next_term].vidmem, 80*25*2);     // restore next state into vidmem
+    memcpy(keyboard_buf, terminals[next_term].keyboard_buf, KEYBOARD_BUF_SIZE);             // restore keyboard buf, and reprint, rows*cols
     
-    int i;
-    for(i = 0; i < KEYBOARD_BUF_SIZE; i++){
-        putc(keyboard_buf[i]);
-    }
+    // int i;
+    // for(i = 0; i < KEYBOARD_BUF_SIZE; i++){
+    //     putc(keyboard_buf[i]);
+    // }
 
     // finally switch terms
     curr_term = next_term;
+    update_cursor(screen_x, screen_y);
+
     
     // printf("Terminal: %d\n", curr_term);
 }

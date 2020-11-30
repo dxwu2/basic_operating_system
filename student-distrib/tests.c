@@ -155,7 +155,7 @@ void terminal_test2(){
 	// for loop will only go up to 15 characters, meaning rest are null bytes
 	for(i = 0; i < 15; i++){
 		((char*)buf)[i] = i + 65;		// 65 for start of capital letters
-		putc(((char*)buf)[i]);			// print out original 15 characters
+		// putc(((char*)buf)[i]);			// print out original 15 characters
 	}
 
 	// new line to compare
@@ -179,7 +179,7 @@ void terminal_test3(){
 	cnt = terminal_read(1, buf, 2);		// 2 is definitely less than average word length		
 	printf("terminal_read result: ");
 	for(i = 0; i < cnt; i++){
-		putc(((char*)buf)[i]);
+		// putc(((char*)buf)[i]);
 	}
 
 }
@@ -323,7 +323,7 @@ void fs_test_read_small_file(){
 		if (buffer[i] == 0 || buffer[i] == 1 || buffer[i] == 127) {
 			continue;
 		}
-		putc(buffer[i]);
+		// putc(buffer[i]);
 	}
 	printf("\nfile_name: frame0.txt");
 }
@@ -361,7 +361,7 @@ void fs_test_read_executable(){
 		if (buffer[i] == 0 || buffer[i] == 1 || buffer[i] == 127) {
 			continue;
 		}
-		putc(buffer[i]);
+		// putc(buffer[i]);
 	}
 	printf("\nfile_name: grep");
 }
@@ -436,7 +436,7 @@ void fs_test_read_large_file(){
 	// 4044 = p
 	int i;
 	for (i = 0; i < file_size; i++) {
-		putc(buffer[i]);
+		// putc(buffer[i]);
 	}
 
 	printf("\nfile_name: verylargetextwithverylongname.txt");

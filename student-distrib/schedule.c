@@ -115,12 +115,13 @@ void schedule(){
     // need to BOOT the SECOND terminal
     if(scheduling_array[1] == -1){
         scheduled_process = 1;
-        switch_coords(0, 1);
+        // switch_coords(0, 1);
 
         int ebp = 0x800000 - (scheduled_process) * 0x2000;
         int esp = ebp;
 
         scheduling_vidmap(scheduled_process, curr_term);
+        switch_coords(0, 1);
 
         asm volatile(
             // literally save ebp and esp into (free to clobber) registers
@@ -139,12 +140,13 @@ void schedule(){
     if(scheduling_array[2] == -1){
         scheduled_process = 2;
         booted_flag = 1;
-        switch_coords(1,2);
+        // switch_coords(1,2);
 
         int ebp = 0x800000 - (scheduled_process) * 0x2000;
         int esp = ebp;
 
         scheduling_vidmap(scheduled_process, curr_term);
+        switch_coords(1,2);
 
         asm volatile(
             // literally save ebp and esp into (free to clobber) registers
@@ -167,6 +169,7 @@ void schedule(){
     // if NOT equal, then need to change mapping to map to background buffers in physical memory
 
     // finally switch it
+    int prev_process = scheduled_process;
     scheduled_process = next_scheduling_term;
 
     next_pcb = get_pcb_from_pid(scheduling_array[next_scheduling_term]);
@@ -184,7 +187,7 @@ void schedule(){
     scheduling_vidmap(next_scheduling_term, curr_term);
 
     // switch coords
-    switch_coords(scheduled_process, next_scheduling_term);
+    switch_coords(prev_process, next_scheduling_term);
 
     /* Switch ESP and EBP to next processes kernel stack */
     asm volatile(

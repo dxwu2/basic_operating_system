@@ -171,7 +171,7 @@ void process_key(uint8_t scancode){
             // }
             int i;
             for(i = 0; i < strlen(keyboard_buf); i++){
-                putc(keyboard_buf[i]);
+                putc(keyboard_buf[i], 1);
             }
         }
 
@@ -237,7 +237,7 @@ void process_key(uint8_t scancode){
     if(buf_idx <= 126){
         // add letter to current buffer
         add_to_buf(letter);
-        putc(letter);
+        putc(letter, 1);
     }
 }
 
@@ -306,7 +306,7 @@ void clear_keyboard_buf(void){
  *   SIDE EFFECTS: clears keyboard buffer afterwards
  */ 
 void keyboard_return(void){
-    putc('\n');                         // print new line
+    putc('\n', 1);                         // print new line
     keyboard_buf[buf_idx] = '\n';       // insert into buffer
 
     buf_idx++;      // not necessary but kept for debugging -> gets reset anyway
@@ -449,7 +449,7 @@ void autocomplete(void){
     buf_idx = strlen((int8_t*)keyboard_buf);
 
     for(i = old_idx+1; i < KEYBOARD_BUF_SIZE; i++){
-        putc(keyboard_buf[i]);
+        putc(keyboard_buf[i], 1);
     }
 
     // printf("\nkeyboard_buf: %d\n", strlen((int8_t*)keyboard_buf));
