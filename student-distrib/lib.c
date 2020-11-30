@@ -24,10 +24,10 @@ void clear(void) {
         *(uint8_t *)(video_mem + (i << 1) + 1) = ATTRIB;
     }
 
-    screen_x = 0;
-    screen_y = 0;
+    terminals[curr_term].term_x = 0;
+    terminals[curr_term].term_y = 0;
 
-    update_cursor(screen_x, screen_y);
+    update_cursor(terminals[curr_term].term_x, terminals[curr_term].term_y);
 }
 
 /* Standard printf().
@@ -68,7 +68,7 @@ format_char_switch:
                     switch (*buf) {
                         /* Print a literal '%' character */
                         case '%':
-                            putc('%', 0);
+                            putc('%', curr_term);
                             break;
 
                         /* Use alternate formatting */
@@ -130,7 +130,7 @@ format_char_switch:
 
                         /* Print a single character */
                         case 'c':
-                            putc((uint8_t) *((int32_t *)esp), 0);
+                            putc((uint8_t) *((int32_t *)esp), curr_term);
                             esp++;
                             break;
 
@@ -148,7 +148,7 @@ format_char_switch:
                 break;
 
             default:
-                putc(*buf, 0);
+                putc(*buf, curr_term);
                 break;
         }
         buf++;
@@ -163,7 +163,7 @@ format_char_switch:
 int32_t puts(int8_t* s) {
     register int32_t index = 0;
     while (s[index] != '\0') {
-        putc(s[index], 0);
+        putc(s[index], curr_term);
         index++;
     }
     return index;
@@ -173,114 +173,37 @@ int32_t puts(int8_t* s) {
  * Inputs: uint_8* c = character to print
  * Return Value: void
  *  Function: Output a character to the console */
-void putc(uint8_t c, int isKeyboard) {
-
-    // if keyboard press, print to visible screen
-    if(isKeyboard){
-        // do not print null bytes
-        if(c == '\0'){
-            return;
-        }
-
-        if(c == '\n' || c == '\r') {
-            screen_y++;
-            screen_x = 0;
-        } 
-        else {
-            *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = c;
-            *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB;
-
-            // if screen x is more than num of cols
-            screen_x++;
-            // screen_y = (screen_y + (screen_x / NUM_COLS)) % NUM_ROWS;
-        }
-
-        if(screen_x >= NUM_COLS){
-                screen_x = 0;               // reset x coord
-                screen_y++;                 // move down a row
-            }
-
-        // also need to handle when y reaches end
-        if(screen_y >= NUM_ROWS){
-            vert_scroll();              // function for vert scroll -> shift all video memory up by one
-            screen_y = NUM_ROWS-1;      // we do not want to be directly at bottom, but one row up
-            screen_x = 0;
-        }
-
-        // update cursor function ...
-        update_cursor(screen_x, screen_y);
+void putc(uint8_t c, int term_id) {
+    if(c == '\0'){
+        return;
     }
 
-    // otherwise print to backup buffer
-    else{
-        char* vidmem = (char*)terminals[scheduled_process].vidmem;      // get right physical address of physical buffer
+    if(c == '\n' || c == '\r') {
+        terminals[term_id].term_y++;
+        terminals[term_id].term_x = 0;
+    } 
+    else {
+        *(uint8_t *)(video_mem + ((NUM_COLS * terminals[term_id].term_y + terminals[term_id].term_x) << 1)) = c;
+        *(uint8_t *)(video_mem + ((NUM_COLS * terminals[term_id].term_y + terminals[term_id].term_x) << 1) + 1) = ATTRIB;
 
-        if(c == '\0'){
-            return;
-        }
-
-        if(c == '\n' || c == '\r') {
-            terminals[scheduled_process].term_y++;
-            terminals[scheduled_process].term_x = 0;
-        } 
-        else {
-            *(uint8_t *)(vidmem + ((NUM_COLS * terminals[scheduled_process].term_y + terminals[scheduled_process].term_x) << 1)) = c;
-            *(uint8_t *)(vidmem + ((NUM_COLS * terminals[scheduled_process].term_y + terminals[scheduled_process].term_x) << 1) + 1) = ATTRIB;
-
-            // if screen x is more than num of cols
-            terminals[scheduled_process].term_x++;
-        }
-
-        if(terminals[scheduled_process].term_x >= NUM_COLS){
-                terminals[scheduled_process].term_x = 0;               // reset x coord
-                terminals[scheduled_process].term_y++;                 // move down a row
-            }
-
-        // also need to handle when y reaches end
-        if(terminals[scheduled_process].term_y >= NUM_ROWS){
-            vert_scroll();              // function for vert scroll -> shift all video memory up by one
-            terminals[scheduled_process].term_y = NUM_ROWS-1;      // we do not want to be directly at bottom, but one row up
-            terminals[scheduled_process].term_x = 0;
-        }
-
-        // update cursor function ...
-        update_cursor(terminals[scheduled_process].term_x, terminals[scheduled_process].term_y);
+        // if screen x is more than num of cols
+        terminals[term_id].term_x++;
     }
 
-    // ---------------------------------------------------------------------------------------------------------------------------
-    // this is the OG putc
+    if(terminals[term_id].term_x >= NUM_COLS){
+        terminals[term_id].term_x = 0;               // reset x coord
+        terminals[term_id].term_y++;                 // move down a row
+    }
 
-    // if(c == '\0'){
-    //         return;
-    //     }
+    // also need to handle when y reaches end
+    if(terminals[term_id].term_y >= NUM_ROWS){
+        vert_scroll();              // function for vert scroll -> shift all video memory up by one
+        terminals[term_id].term_y = NUM_ROWS-1;      // we do not want to be directly at bottom, but one row up
+        terminals[term_id].term_x = 0;
+    }
 
-    //     if(c == '\n' || c == '\r') {
-    //         screen_y++;
-    //         screen_x = 0;
-    //     } 
-    //     else {
-    //         *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = c;
-    //         *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB;
-
-    //         // if screen x is more than num of cols
-    //         screen_x++;
-    //         // screen_y = (screen_y + (screen_x / NUM_COLS)) % NUM_ROWS;
-    //     }
-
-    //     if(screen_x >= NUM_COLS){
-    //             screen_x = 0;               // reset x coord
-    //             screen_y++;                 // move down a row
-    //         }
-
-    //     // also need to handle when y reaches end
-    //     if(screen_y >= NUM_ROWS){
-    //         vert_scroll();              // function for vert scroll -> shift all video memory up by one
-    //         screen_y = NUM_ROWS-1;      // we do not want to be directly at bottom, but one row up
-    //         screen_x = 0;
-    //     }
-
-    //     // update cursor function ...
-    //     update_cursor(screen_x, screen_y);
+    // update cursor function ...
+    update_cursor(terminals[term_id].term_x, terminals[term_id].term_y);
 }
 
 /* int8_t* itoa(uint32_t value, int8_t* buf, int32_t radix);
@@ -599,14 +522,14 @@ void update_cursor(int x, int y) {
  * Return Value: void
  * Function: Erases most recent char from screen (if exists) */
 void backspace(void) {
-    screen_x--;     // decrement x because we just erased a char
-    screen_x %= NUM_COLS;
-    screen_y = (screen_y + (screen_x / NUM_COLS)) % NUM_ROWS;
+    terminals[curr_term].term_x--;     // decrement x because we just erased a char
+    terminals[curr_term].term_x %= NUM_COLS;
+    terminals[curr_term].term_y = (terminals[curr_term].term_y + (terminals[curr_term].term_x / NUM_COLS)) % NUM_ROWS;
 
-    *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = '\0';
-    *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB;
+    *(uint8_t *)(video_mem + ((NUM_COLS * terminals[curr_term].term_y + terminals[curr_term].term_x) << 1)) = '\0';
+    *(uint8_t *)(video_mem + ((NUM_COLS * terminals[curr_term].term_y + terminals[curr_term].term_x) << 1) + 1) = ATTRIB;
 
-    update_cursor(screen_x, screen_y);      // update cursor
+    update_cursor(terminals[curr_term].term_x, terminals[curr_term].term_y);      // update cursor
 }
 
 

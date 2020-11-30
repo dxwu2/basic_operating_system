@@ -50,9 +50,10 @@
 // flag indicating whether key was pressed - should be volatile
 volatile int key_flag;
 
-// for the keyboard buffer
-char keyboard_buf[KEYBOARD_BUF_SIZE];     // need keyboard buffer -> size 128 char but last character is null '\0'
-int buf_idx;                              // idx for current place in keyboard buffer -> initialize to 0
+// for the keyboard buffer - NOT GOOD FOR 3 TERMINALS -> add to struct!
+
+// char keyboard_buf[KEYBOARD_BUF_SIZE];     // need keyboard buffer -> size 128 char but last character is null '\0'
+// int buf_idx;                              // idx for current place in keyboard buffer -> initialize to 0
 
 // key states
 int shift_pressed;
@@ -79,7 +80,8 @@ void add_to_buf(char letter);
 void delete_from_buf(void);
 
 // clears buffer
-void clear_keyboard_buf(void);
+// void clear_keyboard_buf(void);
+void clear_keyboard_buf(int term_id);
 
 // returns keyboard buffer
 void keyboard_return(void);

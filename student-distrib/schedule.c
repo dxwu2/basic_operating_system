@@ -54,6 +54,9 @@ void initial_boot() {
         vidmap_term(i);
         
         terminals[i] = term;
+
+        terminals[i].term_x = 0;
+        terminals[i].term_y = 0;
     }
 
     terminals[0].vidmem = (int32_t) TERM_1_VIDPAGE;
@@ -121,7 +124,7 @@ void schedule(){
         int esp = ebp;
 
         scheduling_vidmap(scheduled_process, curr_term);
-        switch_coords(0, 1);
+        // switch_coords(0, 1);
 
         asm volatile(
             // literally save ebp and esp into (free to clobber) registers
@@ -146,7 +149,7 @@ void schedule(){
         int esp = ebp;
 
         scheduling_vidmap(scheduled_process, curr_term);
-        switch_coords(1,2);
+        // switch_coords(1,2);
 
         asm volatile(
             // literally save ebp and esp into (free to clobber) registers
@@ -187,7 +190,7 @@ void schedule(){
     scheduling_vidmap(next_scheduling_term, curr_term);
 
     // switch coords
-    switch_coords(prev_process, next_scheduling_term);
+    // switch_coords(prev_process, next_scheduling_term);
 
     /* Switch ESP and EBP to next processes kernel stack */
     asm volatile(
