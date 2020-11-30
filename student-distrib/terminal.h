@@ -46,7 +46,7 @@ typedef struct term{
 
     char keyboard_buf[128];     // keyboard buf size
     int term_pid[4];            // any given terminal can have at most 4 processes runnning (per discussion) - may not need it
-    int32_t* vidmem;
+    int32_t vidmem;
 
 } term_t;
 

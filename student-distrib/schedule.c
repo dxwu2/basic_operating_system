@@ -176,6 +176,7 @@ void schedule(){
     // if scheduled_process == curr_term, then don't need to do anything because it's already mapped to physical vid addr (0xB8000), we did this in checkpoint 4
     // if NOT equal, then need to change mapping to map to background buffers in physical memory
 
+    int prev_process = scheduled_process;
     // finally switch it
     scheduled_process = next_scheduling_term;
 
@@ -194,7 +195,7 @@ void schedule(){
     scheduling_vidmap(next_scheduling_term, curr_term);
 
     // switch coords
-    switch_coords(scheduled_process, next_scheduling_term);
+    switch_coords(prev_process, next_scheduling_term);
 
     /* Switch ESP and EBP to next processes kernel stack */
     asm volatile(

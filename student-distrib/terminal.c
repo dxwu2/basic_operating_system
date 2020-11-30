@@ -65,6 +65,8 @@ int32_t terminal_write(int32_t fd, const void* buf, int32_t nbytes){
         return -1;
     }
 
+    // check whether 
+
     // bytes should be the minimum between keyboard buffer length and nbytes to read
     bytes = (strlen((char*)buf) < nbytes) ? strlen((char*)buf) : nbytes;
 
@@ -74,6 +76,9 @@ int32_t terminal_write(int32_t fd, const void* buf, int32_t nbytes){
             putc(letter);
         }
     }
+
+    // if((scheduled_process == curr_term) || keyboard press) -> print to current screen
+    // else print to scheduled screen
 
     return nbytes;
 }
@@ -92,12 +97,14 @@ void switch_terminals(int next_term) {
     memcpy(terminals[curr_term].keyboard_buf, keyboard_buf, KEYBOARD_BUF_SIZE);     // save keyboard buffer
     terminals[curr_term].term_x = screen_x;                                         // save screen x/y
     terminals[curr_term].term_y = screen_y;
-    memcpy((uint32_t*)terminals[curr_term].vidmem, (uint32_t*)VIDMEM_ADDRESS, FOUR_KB);     // save video mem into backup buffer
+    // 80 * 25 * 2, since 80 columns, 25 rows, and 2 bytes per char
+    memcpy((uint32_t*)terminals[curr_term].vidmem, (uint32_t*)VIDMEM_ADDRESS, 80*25*2);     // save video mem into backup buffer
 
     // restore next terminal's progress
     screen_x = terminals[next_term].term_x;         // restore screen x/y
     screen_y = terminals[next_term].term_y;
-    memcpy((uint32_t*)VIDMEM_ADDRESS, (uint32_t*)terminals[next_term].vidmem, FOUR_KB);     // restore next state into vidmem
+    // 80 * 25 * 2, since 80 columns, 25 rows, and 2 bytes per char
+    memcpy((uint32_t*)VIDMEM_ADDRESS, (uint32_t*)terminals[next_term].vidmem, 80*25*2);     // restore next state into vidmem
     memcpy(keyboard_buf, terminals[next_term].keyboard_buf, KEYBOARD_BUF_SIZE);             // restore keyboard buf, and reprint
 
     update_cursor(screen_x, screen_y);
@@ -115,6 +122,9 @@ void switch_terminals(int next_term) {
 
 // save coordinates and switch them, takes no inputs
 void switch_coords(int scheduled_term, int next_term){
+    if (scheduled_term == next_term) {
+        terminals[scheduled_term].term_x = screen_x;
+    }
     // save old
     terminals[scheduled_term].term_x = screen_x;
     terminals[scheduled_term].term_y = screen_y;
