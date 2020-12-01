@@ -73,6 +73,8 @@ int32_t terminal_write(int32_t fd, const void* buf, int32_t nbytes){
         return -1;
     }
 
+    // int terminal = scheduled_process;
+
     // bytes should be the minimum between keyboard buffer length and nbytes to read
     bytes = (strlen((char*)buf) < nbytes) ? strlen((char*)buf) : nbytes;
 
@@ -80,6 +82,7 @@ int32_t terminal_write(int32_t fd, const void* buf, int32_t nbytes){
         char letter = ((char*)buf)[i];      // converting void pointer to char pointer -> need to index by array (ea char = 1 byte)
         if(letter != '\0'){                 // do not print null bytes to screen
             // putc(letter, 0);
+            // putc(letter, terminal);
             putc(letter, scheduled_process);
         }
     }

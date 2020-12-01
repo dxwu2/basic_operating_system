@@ -207,7 +207,8 @@ void putc(uint8_t c, int term_id) {
 
     // also need to handle when y reaches end
     if(terminals[term_id].term_y >= NUM_ROWS){
-        vert_scroll();              // function for vert scroll -> shift all video memory up by one
+        // vert_scroll();              // function for vert scroll -> shift all video memory up by one
+        vert_scroll(term_id);
         terminals[term_id].term_y = NUM_ROWS-1;      // we do not want to be directly at bottom, but one row up
         terminals[term_id].term_x = 0;
     }
@@ -547,21 +548,52 @@ void backspace(void) {
  * Inputs: void
  * Return Value: void
  * Function: implements vertical scrolling when screen_y hits end */
-void vert_scroll(void) {
+void vert_scroll(int term_id) {
     // need to copy memory one row up AND clear last row
     int32_t i;      // for indexing
 
-    // First: copy memory one row up from 0 to NUM_ROWS-1 (we want last one so stop there)
-    // just replace i with the x_offset location == NUM_COLS+i == width+i
-    for (i = 0; i < (NUM_ROWS-1) * NUM_COLS; i++) {
-        *(uint8_t *)(video_mem + (i << 1)) = *(uint8_t *)(video_mem + ((NUM_COLS + i) << 1));               // looks at next row's video memory
-        *(uint8_t *)(video_mem + (i << 1) + 1) = *(uint8_t *)(video_mem + ((NUM_COLS + i) << 1) + 1);       // just looks at the next row's ATTRIB    
+    if(term_id == curr_term){
+        // First: copy memory one row up from 0 to NUM_ROWS-1 (we want last one so stop there)
+        // just replace i with the x_offset location == NUM_COLS+i == width+i
+        for (i = 0; i < (NUM_ROWS-1) * NUM_COLS; i++) {
+            *(uint8_t *)(video_mem + (i << 1)) = *(uint8_t *)(video_mem + ((NUM_COLS + i) << 1));               // looks at next row's video memory
+            *(uint8_t *)(video_mem + (i << 1) + 1) = *(uint8_t *)(video_mem + ((NUM_COLS + i) << 1) + 1);       // just looks at the next row's ATTRIB    
+        }
+
+        // clear last row - so start where we ended above
+        // this is basically clear()
+        for (i = (NUM_ROWS-1) * NUM_COLS; i < NUM_ROWS * NUM_COLS; i++) {
+            *(uint8_t *)(video_mem + (i << 1)) = ' ';
+            *(uint8_t *)(video_mem + (i << 1) + 1) = ATTRIB;
+        }
+    }
+    else{
+        // First: copy memory one row up from 0 to NUM_ROWS-1 (we want last one so stop there)
+        // just replace i with the x_offset location == NUM_COLS+i == width+i
+        for (i = 0; i < (NUM_ROWS-1) * NUM_COLS; i++) {
+            *(uint8_t *)(video_mem + (term_id+1)*0x1000 + (i << 1)) = *(uint8_t *)(video_mem + (term_id+1)*0x1000 + ((NUM_COLS + i) << 1));               // looks at next row's video memory
+            *(uint8_t *)(video_mem + (term_id+1)*0x1000 + (i << 1) + 1) = *(uint8_t *)(video_mem + (term_id+1)*0x1000 + ((NUM_COLS + i) << 1) + 1);       // just looks at the next row's ATTRIB    
+        }
+
+        // clear last row - so start where we ended above
+        // this is basically clear()
+        for (i = (NUM_ROWS-1) * NUM_COLS; i < NUM_ROWS * NUM_COLS; i++) {
+            *(uint8_t *)(video_mem + (term_id+1)*0x1000 + (i << 1)) = ' ';
+            *(uint8_t *)(video_mem + (term_id+1)*0x1000 + (i << 1) + 1) = ATTRIB;
+        }
     }
 
-    // clear last row - so start where we ended above
-    // this is basically clear()
-    for (i = (NUM_ROWS-1) * NUM_COLS; i < NUM_ROWS * NUM_COLS; i++) {
-        *(uint8_t *)(video_mem + (i << 1)) = ' ';
-        *(uint8_t *)(video_mem + (i << 1) + 1) = ATTRIB;
-    }
+    // // First: copy memory one row up from 0 to NUM_ROWS-1 (we want last one so stop there)
+    // // just replace i with the x_offset location == NUM_COLS+i == width+i
+    // for (i = 0; i < (NUM_ROWS-1) * NUM_COLS; i++) {
+    //     *(uint8_t *)(video_mem + (i << 1)) = *(uint8_t *)(video_mem + ((NUM_COLS + i) << 1));               // looks at next row's video memory
+    //     *(uint8_t *)(video_mem + (i << 1) + 1) = *(uint8_t *)(video_mem + ((NUM_COLS + i) << 1) + 1);       // just looks at the next row's ATTRIB    
+    // }
+
+    // // clear last row - so start where we ended above
+    // // this is basically clear()
+    // for (i = (NUM_ROWS-1) * NUM_COLS; i < NUM_ROWS * NUM_COLS; i++) {
+    //     *(uint8_t *)(video_mem + (i << 1)) = ' ';
+    //     *(uint8_t *)(video_mem + (i << 1) + 1) = ATTRIB;
+    // }
 }
