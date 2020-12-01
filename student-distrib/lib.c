@@ -214,7 +214,7 @@ void putc(uint8_t c, int term_id) {
     }
 
     // update cursor function ...
-    update_cursor(terminals[term_id].term_x, terminals[term_id].term_y);
+    update_cursor(terminals[curr_term].term_x, terminals[curr_term].term_y);
 }
 
 /* int8_t* itoa(uint32_t value, int8_t* buf, int32_t radix);
