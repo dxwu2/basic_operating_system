@@ -57,6 +57,8 @@ void initial_boot() {
 
         terminals[i].term_x = 0;
         terminals[i].term_y = 0;
+        terminals[i].key_flag = 0;
+        terminals[i].buf_idx = 0;
     }
 
     terminals[0].vidmem = (int32_t) TERM_1_VIDPAGE;
@@ -172,7 +174,6 @@ void schedule(){
     // if NOT equal, then need to change mapping to map to background buffers in physical memory
 
     // finally switch it
-    int prev_process = scheduled_process;
     scheduled_process = next_scheduling_term;
 
     next_pcb = get_pcb_from_pid(scheduling_array[next_scheduling_term]);
