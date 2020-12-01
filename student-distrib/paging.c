@@ -150,6 +150,28 @@ void map_vidmem() {
  */ 
 void scheduling_vidmap(int terminal, int curr_term) {
 
+    // map_vidmem();
+    page_directory[33].P = 1;   // mark as present
+    // must be user level access -> but might already be set
+    page_directory[33].U = 1;   // accessible by all
+    // R/W accessible
+    page_directory[33].R = 1;
+    page_directory[33].S = 0; 
+    page_directory[33].offset31_12 = (uint32_t)vidmap_page_table >> ADDRESS_SHIFT_KB;
+
+    if(terminal != curr_term){
+        vidmap_page_table[0].P = 1;
+        vidmap_page_table[0].U = 1;
+        vidmap_page_table[0].R = 1;
+        vidmap_page_table[0].offset31_12 = (VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB) + (terminal + 1);
+    }
+    else{
+        vidmap_page_table[0].P = 1;
+        vidmap_page_table[0].U = 1;
+        vidmap_page_table[0].R = 1;
+        vidmap_page_table[0].offset31_12 = (VIDMEM_ADDRESS >> ADDRESS_SHIFT_KB);
+    }
+
     if(terminal != curr_term){
         page_table[video_pages[terminal] >> ADDRESS_SHIFT_KB].P = 1;
         page_table[video_pages[terminal] >> ADDRESS_SHIFT_KB].U = 1;
