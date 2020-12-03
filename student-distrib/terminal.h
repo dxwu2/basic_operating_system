@@ -53,6 +53,7 @@ typedef struct term{
 
     int ac_repeats;             // count for #times stuck at autocomplete
     int history_idx;            // idx for buffer history
+    int absolute_history_idx;   // absolute idx so we can return here
     char history[100][128];      // history of 100 keyboard buffers
 
 } term_t;

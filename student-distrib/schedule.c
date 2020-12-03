@@ -61,6 +61,7 @@ void initial_boot() {
         terminals[i].buf_idx = 0;
         terminals[i].ac_repeats = 0;
         terminals[i].history_idx = 0;
+
     }
 
     terminals[0].vidmem = (int32_t) TERM_1_VIDPAGE;

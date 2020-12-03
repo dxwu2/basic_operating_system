@@ -105,10 +105,12 @@ void keyboard_handler(void){
     case TAB_RELEASE:
         break;
     case UP:
+        move_up_history();
         break;
     case UP_RELEASE:
         break;
     case DOWN:
+        move_down_history();
         break;
     case DOWN_RELEASE:
         break;
@@ -303,6 +305,7 @@ void clear_keyboard_buf(int term_id){
     terminals[term_id].buf_idx = 0;
 }
 
+
 /*
  * keyboard_return
  *   DESCRIPTION: Returns current keyboard buffer to terminal read (maybe new line?)
@@ -312,11 +315,23 @@ void clear_keyboard_buf(int term_id){
  *   SIDE EFFECTS: clears keyboard buffer afterwards
  */ 
 void keyboard_return(void){
-    putc('\n', curr_term);                         // print new line
+    // save current buffer into history
+    if(terminals[curr_term].history_idx <= 99){
+        strncpy(terminals[curr_term].history[terminals[curr_term].history_idx], terminals[curr_term].keyboard_buf, KEYBOARD_BUF_SIZE);
+        // terminals[curr_term].history_flag[terminals[curr_term].history_idx] = 1;        // mark this index as valid to visit
+        
+        // now go through history buf to reset index position
+        int i;
+        for(i = 0; i < 1000; i++){
+            if(terminals[curr_term].history[i][0] == '\0'){
+                terminals[curr_term].history_idx = i;
+                terminals[curr_term].absolute_history_idx = i;
+                break;
+            }
+        }
+    }
 
-    // save old keyboard buffer
-    char old_buf[KEYBOARD_BUF_SIZE];
-    strncpy(old_buf, terminals[curr_term].keyboard_buf, KEYBOARD_BUF_SIZE);
+    putc('\n', curr_term);                         // print new line
 
     terminals[curr_term].keyboard_buf[terminals[curr_term].buf_idx] = '\n';       // insert into buffer
 
@@ -334,12 +349,68 @@ void keyboard_return(void){
 
 // move up in buffer history
 void move_up_history(void){
+    // save current keyboard buffer into history if most recent
+    if(terminals[curr_term].absolute_history_idx == terminals[curr_term].history_idx){
+        strncpy(terminals[curr_term].history[terminals[curr_term].history_idx], terminals[curr_term].keyboard_buf, KEYBOARD_BUF_SIZE);
+    }
+
+    // try to see if we can go up without going OOB
+    if(terminals[curr_term].history_idx - 1 >= 0){
+        terminals[curr_term].history_idx--;
+    }
+    else{
+        terminals[curr_term].history_idx = 0;
+    }
+
+    // erase current buffer from screen
+    int i;
+    for(i = terminals[curr_term].buf_idx-1; i >=0; i--){
+        backspace();
+    }
+
+    // now copy keyboard buf
+    strncpy(terminals[curr_term].keyboard_buf, terminals[curr_term].history[terminals[curr_term].history_idx], KEYBOARD_BUF_SIZE);
+    terminals[curr_term].buf_idx = strlen(terminals[curr_term].keyboard_buf);
+
+    for(i = 0; i < strlen(terminals[curr_term].keyboard_buf); i++){
+        putc(terminals[curr_term].keyboard_buf[i], curr_term);
+    }
+
 }
 
 
 // move down in buffer history
 void move_down_history(void){
+    // if we can't go down (either most recent or OOB), dont do anything (return)
+    if((terminals[curr_term].absolute_history_idx < terminals[curr_term].history_idx+1) || (terminals[curr_term].history_idx + 1 > 99)){
+        return;
+    }
+    else{
+        terminals[curr_term].history_idx++;
+    }
+
+    // if((terminals[curr_term].history[terminals[curr_term].history_idx + 1][0] != '\0') && (terminals[curr_term].history_idx + 1 <= 99)){
+    //     terminals[curr_term].history_idx++;
+    // }
+    // else if ((terminals[curr_term].history_idx + 1 <= 99)){
+    //     terminals[curr_term].history_idx = 99;
+    // }
+
+    // erase current buffer from screen
+    int i;
+    for(i = terminals[curr_term].buf_idx-1; i >=0; i--){
+        backspace();
+    }
+
+    // now copy keyboard buf
+    strncpy(terminals[curr_term].keyboard_buf, terminals[curr_term].history[terminals[curr_term].history_idx], KEYBOARD_BUF_SIZE);
+    terminals[curr_term].buf_idx = strlen(terminals[curr_term].keyboard_buf);
+
+    for(i = 0; i < strlen(terminals[curr_term].keyboard_buf); i++){
+        putc(terminals[curr_term].keyboard_buf[i], curr_term);
+    }
 }
+
 
 /*
  * autcomplete
