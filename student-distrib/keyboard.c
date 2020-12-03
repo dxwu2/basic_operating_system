@@ -104,6 +104,14 @@ void keyboard_handler(void){
         break;
     case TAB_RELEASE:
         break;
+    case UP:
+        break;
+    case UP_RELEASE:
+        break;
+    case DOWN:
+        break;
+    case DOWN_RELEASE:
+        break;
     case BACKSPACE:
         if(terminals[curr_term].buf_idx >= 0){
             if(terminals[curr_term].buf_idx > 0) backspace();    // if we can delete a char from screen, call backspace (lib.c) to erase
@@ -303,6 +311,11 @@ void clear_keyboard_buf(int term_id){
  */ 
 void keyboard_return(void){
     putc('\n', curr_term);                         // print new line
+
+    // save old keyboard buffer
+    char old_buf[KEYBOARD_BUF_SIZE];
+    strncpy(old_buf, terminals[curr_term].keyboard_buf, KEYBOARD_BUF_SIZE);
+
     terminals[curr_term].keyboard_buf[terminals[curr_term].buf_idx] = '\n';       // insert into buffer
 
     terminals[curr_term].buf_idx++;      // not necessary but kept for debugging -> gets reset anyway
@@ -311,13 +324,26 @@ void keyboard_return(void){
     // key_flag = 1;
     terminals[curr_term].key_flag = 1;      // tell current terminal that enter was pressed
 
+    terminals[curr_term].ac_repeats = 0;    // reset repeats
+
     // clear_keyboard_buf();       // need to clear the buffer at the end
 }
 
 
+// move up in buffer history
+void move_up_history(void){
+}
+
+
+// move down in buffer history
+void move_down_history(void){
+}
+
 /*
  * autcomplete
  *   DESCRIPTION: Implementation of bash autocomplete when pressing TAB
+ *   INPUT: None
+ *   OUTPUT: None
  *   SIDE EFFECTS: adds to buffer and prints to screen if valid match
  */ 
 void autocomplete(void){
@@ -331,14 +357,18 @@ void autocomplete(void){
     char check[33];
     char temp[33];
 
+    // we will compare at most 33 elements;
+    int8_t ls[33][33];
+
     for(i = 0; i < 33; i++){
         prefix[i] = '\0';
         best[i] = '\0';
         temp[i] = '\0';
-    }
 
-    // we will compare at most 30 elements;
-    int8_t ls[30][33];
+        for(j = 0; j < 33; j++){
+            ls[i][j] = '\0';
+        }
+    }
 
     // get prefix that is after LAST space
     length = strlen(terminals[curr_term].keyboard_buf);
@@ -438,8 +468,29 @@ void autocomplete(void){
             strncpy(temp, best, 33);        // 33 is size of these names
             memcpy(best, temp, min+1);       // get substr of best (0 to min+1)
             best[min+1] = '\0';
+
+            terminals[curr_term].ac_repeats = 0;        // reset repeat flag
         }
         else{
+            // if user keeps repeating, show all files with closest match
+            terminals[curr_term].ac_repeats++;
+            if(terminals[curr_term].ac_repeats > 1){
+                // loop through ls elements (30 at most)
+                printf("\n");
+                for(i = 0; i < 30; i++){
+                    if(ls[i][0] != '\0'){
+                        printf(ls[i]);
+                        printf("\n");
+                    }
+                }
+                printf("391OS> ");
+                for(i = 0; i < KEYBOARD_BUF_SIZE; i++){
+                    putc(terminals[curr_term].keyboard_buf[i], curr_term);
+                }
+
+                // terminals[curr_term].ac_repeats = 0;        // reset repeat flag
+            }
+
             return;     // duplicates exist, already at max prefix thats the same
         }
     }
@@ -450,9 +501,6 @@ void autocomplete(void){
         terminals[curr_term].keyboard_buf[i] = best[j];
         j++;
     }
-
-    // finally add a space
-    // terminals[curr_term].keyboard_buf[i] = ' ';
 
     // erase old buffer
     for(i = old_length-1; i > old_idx; i--){

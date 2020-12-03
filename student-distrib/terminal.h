@@ -49,7 +49,11 @@ typedef struct term{
     
     int term_pid[4];            // any given terminal can have at most 4 processes runnning (per discussion) - may not need it
     int32_t vidmem;
-    int key_flag;
+    int key_flag;               // key for pressing enter
+
+    int ac_repeats;             // count for #times stuck at autocomplete
+    int history_idx;            // idx for buffer history
+    char history[100][128];      // history of 100 keyboard buffers
 
 } term_t;
 
