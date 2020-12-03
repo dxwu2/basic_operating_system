@@ -116,6 +116,8 @@ void keyboard_handler(void){
         if(terminals[curr_term].buf_idx >= 0){
             if(terminals[curr_term].buf_idx > 0) backspace();    // if we can delete a char from screen, call backspace (lib.c) to erase
             delete_from_buf();
+
+            terminals[curr_term].ac_repeats = 0;        // reset counter since potential change
         }
         break;
     // otherwise normal
