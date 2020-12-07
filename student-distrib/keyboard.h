@@ -89,6 +89,12 @@ void keyboard_return(void);
 // bash autocomplete implementation
 void autocomplete(void);
 
+// move up in buffer history
+void move_up_history(void);
+
+// move down in buffer history
+void move_down_history(void);
+
 // handler for keyboard - make it extern for asm linkage
 extern void keyboard_handler(void);
 

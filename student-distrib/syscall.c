@@ -76,7 +76,8 @@ int32_t sys_halt (uint8_t status){
     // close any relevant FDs
     // we start at 2 because of stdin and stdout
     for (i = 2; i < FDA_SIZE; i++) {
-        curr_pcb->fda[i].flags = NOT_IN_USE;
+        // curr_pcb->fda[i].flags = NOT_IN_USE;
+        sys_close(i);
     }
 
     // if first shell, restart a new one

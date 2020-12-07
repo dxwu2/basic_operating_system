@@ -100,14 +100,26 @@ void keyboard_handler(void){
         keyboard_return();
         break;
     case TAB:
-        // autocomplete();
+        autocomplete();
         break;
     case TAB_RELEASE:
+        break;
+    case UP:
+        move_up_history();
+        break;
+    case UP_RELEASE:
+        break;
+    case DOWN:
+        move_down_history();
+        break;
+    case DOWN_RELEASE:
         break;
     case BACKSPACE:
         if(terminals[curr_term].buf_idx >= 0){
             if(terminals[curr_term].buf_idx > 0) backspace();    // if we can delete a char from screen, call backspace (lib.c) to erase
             delete_from_buf();
+
+            terminals[curr_term].ac_repeats = 0;        // reset counter since potential change
         }
         break;
     // otherwise normal
@@ -265,11 +277,11 @@ void add_to_buf(char letter){
  */ 
 void delete_from_buf(void){
     // make current buf_idx null
-    terminals[curr_term].keyboard_buf[terminals[curr_term].buf_idx] = '\0';
+    terminals[curr_term].keyboard_buf[--terminals[curr_term].buf_idx] = '\0';
 
     // if not at start, decrement buf_idx
-    if(terminals[curr_term].buf_idx > 0){
-        terminals[curr_term].buf_idx--;
+    if(terminals[curr_term].buf_idx < 0){
+        terminals[curr_term].buf_idx = 0;
     }
 }
 
@@ -293,6 +305,7 @@ void clear_keyboard_buf(int term_id){
     terminals[term_id].buf_idx = 0;
 }
 
+
 /*
  * keyboard_return
  *   DESCRIPTION: Returns current keyboard buffer to terminal read (maybe new line?)
@@ -302,7 +315,26 @@ void clear_keyboard_buf(int term_id){
  *   SIDE EFFECTS: clears keyboard buffer afterwards
  */ 
 void keyboard_return(void){
-    putc('\n', curr_term);                         // print new line
+    // save current buffer into history
+    if(terminals[curr_term].history_idx <= 99){
+        strncpy(terminals[curr_term].history[terminals[curr_term].history_idx], terminals[curr_term].keyboard_buf, KEYBOARD_BUF_SIZE);
+        // terminals[curr_term].history_flag[terminals[curr_term].history_idx] = 1;        // mark this index as valid to visit
+        
+        // now go through history buf to reset index position
+        int i;
+        for(i = 0; i < 1000; i++){
+            if(terminals[curr_term].history[i][0] == '\0'){
+                terminals[curr_term].history_idx = i;
+                terminals[curr_term].absolute_history_idx = i;
+                break;
+            }
+        }
+    }
+
+    if(terminals[curr_term].keyboard_buf[0] != '\n'){
+        putc('\n', curr_term);                         // print new line
+    }
+
     terminals[curr_term].keyboard_buf[terminals[curr_term].buf_idx] = '\n';       // insert into buffer
 
     terminals[curr_term].buf_idx++;      // not necessary but kept for debugging -> gets reset anyway
@@ -311,146 +343,256 @@ void keyboard_return(void){
     // key_flag = 1;
     terminals[curr_term].key_flag = 1;      // tell current terminal that enter was pressed
 
+    terminals[curr_term].ac_repeats = 0;    // reset repeats
+
     // clear_keyboard_buf();       // need to clear the buffer at the end
 }
 
 
-// /*
-//  * autcomplete
-//  *   DESCRIPTION: Implementation of bash autocomplete when pressing TAB
-//  *   SIDE EFFECTS: adds to buffer and prints to screen if valid match
-//  */ 
-// void autocomplete(void){
+// move up in buffer history
+void move_up_history(void){
+    // save current keyboard buffer into history if most recent
+    if(terminals[curr_term].absolute_history_idx == terminals[curr_term].history_idx){
+        strncpy(terminals[curr_term].history[terminals[curr_term].history_idx], terminals[curr_term].keyboard_buf, KEYBOARD_BUF_SIZE);
+    }
 
-//     dentry_t cur_dentry;
-// 	int i, j, k, matches, length, old_length, old_idx;
-//     char prefix[33];
-//     char best[33];
-//     char check[33];
-//     char temp[33];
+    // try to see if we can go up without going OOB
+    if(terminals[curr_term].history_idx - 1 >= 0){
+        terminals[curr_term].history_idx--;
+    }
+    else{
+        terminals[curr_term].history_idx = 0;
+    }
 
-//     for(i = 0; i < 33; i++){
-//         prefix[i] = '\0';
-//         best[i] = '\0';
-//         temp[i] = '\0';
-//     }
+    // erase current buffer from screen
+    int i;
+    for(i = terminals[curr_term].buf_idx-1; i >=0; i--){
+        backspace();
+    }
 
-//     // we will compare at most 30 elements;
-//     int8_t ls[30][33];
+    // now copy keyboard buf
+    strncpy(terminals[curr_term].keyboard_buf, terminals[curr_term].history[terminals[curr_term].history_idx], KEYBOARD_BUF_SIZE);
+    terminals[curr_term].buf_idx = strlen(terminals[curr_term].keyboard_buf);
 
-//     // get prefix that is after LAST space
-//     length = strlen(keyboard_buf);
-//     old_length = length;
-//     matches = 0;
+    for(i = 0; i < strlen(terminals[curr_term].keyboard_buf); i++){
+        putc(terminals[curr_term].keyboard_buf[i], curr_term);
+    }
 
-//     for(i = length-1; i >= 0; i--){
-//         if(i >= 1 && keyboard_buf[i-1] == ' ') break;
-//     }
+}
 
-//     old_idx = i;        // record index of space
-    
-//     if(keyboard_buf[i+1] == ' ' || keyboard_buf[i+1] == '\0'){
-//         return;     // do nothing since space was last thing typed
-//     }
-//     else{
-//         // strncpy(prefix, keyboard_buf+i+1, length-i);
-//         strncpy(prefix, keyboard_buf+i, length-i+1);
-//     }
 
-//     // strncpy(prefix, keyboard_buf, KEYBOARD_BUF_SIZE);
-//     length = strlen(prefix);        // make new length
+// move down in buffer history
+void move_down_history(void){
+    // if we can't go down (either most recent or OOB), dont do anything (return)
+    if((terminals[curr_term].absolute_history_idx < terminals[curr_term].history_idx+1) || (terminals[curr_term].history_idx + 1 > 99)){
+        return;
+    }
+    else{
+        terminals[curr_term].history_idx++;
+    }
 
-//     i = 0;
-//     k = 0;
-//     // loop through all possible files in directory
-// 	while ( read_dentry_by_index(i, &cur_dentry) != -1 ) {
+    // if((terminals[curr_term].history[terminals[curr_term].history_idx + 1][0] != '\0') && (terminals[curr_term].history_idx + 1 <= 99)){
+    //     terminals[curr_term].history_idx++;
+    // }
+    // else if ((terminals[curr_term].history_idx + 1 <= 99)){
+    //     terminals[curr_term].history_idx = 99;
+    // }
 
-// 		/* Create name buffer to copy fname into + one extra space for null '\0' char */
-// 		uint8_t fname[FILENAME_LEN + 1];
-// 		for(j = 0; j < FILENAME_LEN; j++){
-// 			fname[j] = cur_dentry.filename[j];
-// 		}
+    // erase current buffer from screen
+    int i;
+    for(i = terminals[curr_term].buf_idx-1; i >=0; i--){
+        backspace();
+    }
 
-// 		fname[32] = '\0';	                    //terminate any string over 32 chars with null char
-//         // strncpy(ls[i], (int8_t*)fname, 33);     // 33 is size of fname
+    // now copy keyboard buf
+    strncpy(terminals[curr_term].keyboard_buf, terminals[curr_term].history[terminals[curr_term].history_idx], KEYBOARD_BUF_SIZE);
+    terminals[curr_term].buf_idx = strlen(terminals[curr_term].keyboard_buf);
 
-//         // see if prefixes match
-//         memcpy(check, &fname, length);      // get substring/prefix of new file to look at
+    for(i = 0; i < strlen(terminals[curr_term].keyboard_buf); i++){
+        putc(terminals[curr_term].keyboard_buf[i], curr_term);
+    }
+}
 
-//         if(strncmp((int8_t*)prefix, (int8_t*)check, length) == 0){
-//             strncpy((int8_t*)best, (int8_t*)fname, strlen((int8_t*)fname));
-//             matches++;
-//             strncpy(ls[k++], (int8_t*)fname, 33);     // 33 is size of fname, copy into ls when matching
-//         }
 
-//         i++;
-// 	}
+/*
+ * autcomplete
+ *   DESCRIPTION: Implementation of bash autocomplete when pressing TAB
+ *   INPUT: None
+ *   OUTPUT: None
+ *   SIDE EFFECTS: adds to buffer and prints to screen if valid match
+ */ 
+void autocomplete(void){
 
-//     if(matches == 0) return;        // nothing in directory, so just return and do nothing
+    if(terminals[curr_term].keyboard_buf[0] == '\0') return;     // return if empty
 
-//     // check if there were duplicates -> get min value to compare with
-//     if(matches > 1){
-//         int index;
-//         int32_t min = 10000000;                     //equivalent to infinity, need to compare mins
-//         for(index = 1; index < i; index++){
-//             // int32_t temp_len = strncmp(ls[index], ls[index-1], strlen(ls[index-1]));
-//             // temp_len = (temp_len < 0) ? strlen(ls[index]) : strlen(ls[index-1]);
-//             // min = (temp_len < min) ? temp_len : min;
+    dentry_t cur_dentry;
+	int i, j, k, matches, length, old_length, old_idx, space_flag;
+    char prefix[33];
+    char best[33];
+    char check[33];
+    char temp[33];
 
-//             if(ls[index-1][0] == '\0' || ls[index][0] == '\0') continue;        // do not compare if empty
+    // we will compare at most 33 elements;
+    int8_t ls[33][33];
 
-//             int rel_min = (strlen(ls[index-1]) < strlen(ls[index])) ? strlen(ls[index-1]) : strlen(ls[index]);
-//             for(j = 0; j <= rel_min; j++){
-//                 if(ls[index-1][j+1] != ls[index][j+1]){
-//                     // identified index of difference -> need to compare with previous min
-//                     min = (j < min) ? j : min;
-//                 }
-//             }
-//         }
+    for(i = 0; i < 33; i++){
+        prefix[i] = '\0';
+        best[i] = '\0';
+        temp[i] = '\0';
 
-//         /* now we have the minimum index j
-//             cat fra
-//                 frame1.txt
-//                 frame0.txt
-//                 frameframeframeframe.txt
-//             should go to:
-//             cat frame (j = 4)
-//         */
-//         if(length-1 < min){
-//             // change best
-//             strncpy(temp, best, 33);        // 33 is size of these names
-//             memcpy(best, temp, min+1);       // get substr of best (0 to min+1)
-//             best[min+1] = '\0';
-//         }
-//         else{
-//             return;     // duplicates exist, already at max prefix thats the same
-//         }
-        
+        for(j = 0; j < 33; j++){
+            ls[i][j] = '\0';
+        }
+    }
 
-//     }
+    // get prefix that is after LAST space
+    length = strlen(terminals[curr_term].keyboard_buf);
+    old_length = length;
+    matches = 0;
 
-//     // replace keyboard buffer
-//     j = 0;
-//     for(i = old_idx; i < old_idx+1+strlen((int8_t*)best); i++){
-//         keyboard_buf[i] = best[j];
-//         j++;
-//     }
+    for(i = length-1; i >= 0; i--){
+        if(i >= 1 && terminals[curr_term].keyboard_buf[i-1] == ' '){
+            space_flag = 1;
+            break;
+        }
+    }
 
-//     // erase old buffer
-//     for(i = old_length-1; i > old_idx; i--){
-//         backspace();
-//     }
+    old_idx = i;        // record index of space
 
-//     // place new buffer
-//     // strncpy(keyboard_buf, best+old_idx, strlen(best));
-//     // NEED TO UPDATE BUF_IDX I THINK FUCCCCCCCKKKKK
-//     buf_idx = strlen((int8_t*)keyboard_buf);
+    // honestly forgot what this did fml    
+    // if(terminals[curr_term].keyboard_buf[i+1] == ' ' || (space_flag && terminals[curr_term].keyboard_buf[i+1] == '\0')){
+    //     return;
+    // }
+    // if we havent seen a space - just one word
+    if(old_idx == -1){
+        old_idx = 0;
+        strncpy(prefix, terminals[curr_term].keyboard_buf, length);
+    }
+    else{
+        // strncpy(prefix, terminals[curr_term].keyboard_buf+i+1, length-i);
+        strncpy(prefix, terminals[curr_term].keyboard_buf+i, length-i+1);
+    }
 
-//     for(i = old_idx+1; i < KEYBOARD_BUF_SIZE; i++){
-//         putc(keyboard_buf[i], curr_term);
-//     }
+    // strncpy(prefix, terminals[curr_term].keyboard_buf, KEYBOARD_BUF_SIZE);
+    length = strlen(prefix);        // make new length
 
-//     // printf("\nkeyboard_buf: %d\n", strlen((int8_t*)keyboard_buf));
-//     // printf("buf_idx: %d", buf_idx);
+    i = 0;
+    k = 0;
+    // loop through all possible files in directory
+	while ( read_dentry_by_index(i, &cur_dentry) != -1 ) {
 
-// }
+		/* Create name buffer to copy fname into + one extra space for null '\0' char */
+		uint8_t fname[FILENAME_LEN + 1];
+		for(j = 0; j < FILENAME_LEN; j++){
+			fname[j] = cur_dentry.filename[j];
+		}
+
+		fname[32] = '\0';	                    //terminate any string over 32 chars with null char
+        // strncpy(ls[i], (int8_t*)fname, 33);     // 33 is size of fname
+
+        // see if prefixes match
+        memcpy(check, &fname, length);      // get substring/prefix of new file to look at
+
+        if(strncmp((int8_t*)prefix, (int8_t*)check, length) == 0){
+            // exact match since length is the same
+            if(length == strlen((int8_t*)fname)){
+                return;
+            }
+
+            // otherwise not same length
+            strncpy((int8_t*)best, (int8_t*)fname, strlen((int8_t*)fname));
+            matches++;
+            strncpy(ls[k++], (int8_t*)fname, 33);     // 33 is size of fname, copy into ls when matching
+        }
+
+        i++;
+	}
+
+    if(matches == 0) return;        // nothing in directory, so just return and do nothing
+
+    // check if there were duplicates -> get min value to compare with
+    else if(matches > 1){
+        int index;
+        int32_t min = 10000000;                     //equivalent to infinity, need to compare mins
+        for(index = 1; index < i; index++){
+            // int32_t temp_len = strncmp(ls[index], ls[index-1], strlen(ls[index-1]));
+            // temp_len = (temp_len < 0) ? strlen(ls[index]) : strlen(ls[index-1]);
+            // min = (temp_len < min) ? temp_len : min;
+
+            if(ls[index-1][0] == '\0' || ls[index][0] == '\0') continue;        // do not compare if empty
+
+            int rel_min = (strlen(ls[index-1]) < strlen(ls[index])) ? strlen(ls[index-1]) : strlen(ls[index]);
+            for(j = 0; j <= rel_min; j++){
+                if(ls[index-1][j+1] != ls[index][j+1]){
+                    // identified index of difference -> need to compare with previous min
+                    min = (j < min) ? j : min;
+                }
+            }
+        }
+
+        /* now we have the minimum index j
+            cat fra
+                frame1.txt
+                frame0.txt
+                frameframeframeframe.txt
+            should go to:
+            cat frame (j = 4)
+        */
+        if(length-1 < min){
+            // change best
+            strncpy(temp, best, 33);        // 33 is size of these names
+            memcpy(best, temp, min+1);       // get substr of best (0 to min+1)
+            best[min+1] = '\0';
+
+            terminals[curr_term].ac_repeats = 0;        // reset repeat flag
+        }
+        else{
+            // if user keeps repeating, show all files with closest match
+            terminals[curr_term].ac_repeats++;
+            if(terminals[curr_term].ac_repeats > 1){
+                // loop through ls elements (30 at most)
+                printf("\n");
+                for(i = 0; i < 30; i++){
+                    if(ls[i][0] != '\0'){
+                        printf(ls[i]);
+                        printf("\n");
+                    }
+                }
+                printf("391OS> ");
+                for(i = 0; i < KEYBOARD_BUF_SIZE; i++){
+                    putc(terminals[curr_term].keyboard_buf[i], curr_term);
+                }
+
+                // terminals[curr_term].ac_repeats = 0;        // reset repeat flag
+            }
+
+            return;     // duplicates exist, already at max prefix thats the same
+        }
+    }
+
+    // replace keyboard buffer
+    j = 0;
+    for(i = old_idx; i < old_idx+1+strlen((int8_t*)best); i++){
+        terminals[curr_term].keyboard_buf[i] = best[j];
+        j++;
+    }
+
+    // erase old buffer
+    for(i = old_length-1; i > old_idx; i--){
+        backspace();
+    }
+
+    // place new buffer
+    // strncpy(terminals[curr_term].keyboard_buf, best+old_idx, strlen(best));
+    // NEED TO UPDATE BUF_IDX I THINK FUCCCCCCCKKKKK
+    terminals[curr_term].buf_idx = strlen((int8_t*)terminals[curr_term].keyboard_buf);
+
+    for(i = old_idx+1; i < KEYBOARD_BUF_SIZE; i++){
+        putc(terminals[curr_term].keyboard_buf[i], curr_term);
+    }
+
+    // printf("\nkeyboard_buf: %d\n", strlen((int8_t*)keyboard_buf));
+    // printf("buf_idx: %d", buf_idx);
+
+}
+
