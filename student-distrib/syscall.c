@@ -149,6 +149,10 @@ int32_t sys_execute (const uint8_t* command){
         return -1;
     }
 
+    if (command[0] == '\n') {
+        return 0;
+    }
+
     int8_t cmd[MAX_CMD_LENGTH];                 // get first command
     uint8_t args[MAX_ARGS_LENGTH];              // get following arguments
     uint8_t idx = 0;                            // to identify spaces (also to index cmd)
